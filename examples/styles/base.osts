@@ -1,0 +1,26 @@
+mission-control-root {
+    background: #0d1117;
+    color: #e6edf3;
+}
+
+mission-header {
+    font-size: 26px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #58a6ff;
+}
+
+telemetry-table {
+    border: 1px solid #30363d;
+    font-size: 14px;
+}
+
+action-bar {
+    gap: 2;
+}
+
+launch-button {
+    background: linear-gradient(#238636, #196126);
+    color: #ffffff;
+    border-radius: 4px;
+}

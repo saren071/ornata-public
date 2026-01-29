@@ -1,0 +1,234 @@
+@colors {
+    primary: #3ea6ff;
+    primary-dark: #1f6bb5;
+    accent: #ff6f91;
+    surface: #111318;
+    surface-light: #1e2128;
+    surface-dark: #090a0d;
+    neutral: #b3b9c6;
+    warning: #f9d648;
+    danger: #ff5f56;
+    success: #2ecc71;
+    shadow: rgba(0, 0, 0, 0.55);
+}
+
+GradientCard {
+    outline: var(primary);
+    background-image: linear-gradient(90deg, primary, accent);
+    background-repeat: no-repeat;
+    background-size: cover;
+    --card-border: 3px solid;
+    [focus] {
+        background-image: linear-gradient(45deg, accent, primary);
+    }
+}
+
+@fonts {
+    base {
+        size: 15;
+        weight: 500;
+        family: "Fira Code";
+    }
+    display {
+        size: 24;
+        weight: 700;
+        family: "Segoe UI";
+    }
+}
+
+@keyframes status-pulse {
+    0% { opacity: 0.5; transform: scale(0.98); }
+    50% { opacity: 1; transform: scale(1.02); }
+    100% { opacity: 0.5; transform: scale(0.98); }
+}
+
+@keyframes rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@media (min-width: 80) {
+    TestingContainer {
+        font-size: 18px;
+        padding: 2 4;
+    }
+}
+
+@media (max-width: 40) {
+    TestingContainer {
+        display: flex;
+        flex-direction: column;
+    }
+}
+
+TestingContainer {
+    color: primary;
+    background: surface;
+    font: base;
+    padding: 1 2;
+    margin: 0 1;
+    border: 1px solid primary-dark;
+    border-radius: 6px;
+    outline: primary;
+    box-shadow: 0px 4px 12px shadow;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    letter-spacing: 0.5px;
+    word-spacing: 1px;
+    line-height: 1.4;
+    opacity: 0.98;
+    --panel-gap: 8px;
+    [focus] {
+        outline: accent;
+        transform: scale(1.01);
+    }
+    [hover] {
+        background: surface-light;
+    }
+    [active] {
+        background: surface-dark;
+        color: accent;
+    }
+}
+
+TestingHeader {
+    font: display;
+    text-transform: uppercase;
+    text-align: left;
+    text-decoration: underline dotted;
+    color: primary;
+    component-extra: telemetry;
+}
+
+TestingPanel {
+    border: 2px solid primary-dark;
+    border-radius: 10px;
+    padding: 1;
+    margin: 8;
+    background-image: linear-gradient(135deg, #1c1f26 0%, #121419 100%);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    [default] {
+        color: neutral;
+    }
+    [warn] {
+        color: warning;
+        animation: status-pulse 1.2s infinite;
+    }
+    [error] {
+        color: danger;
+        text-decoration: line-through;
+    }
+}
+
+TestingButton {
+    font-weight: 600;
+    font-size: 16px;
+    padding: 0.5 1.5;
+    margin: 0.25;
+    border: 1px solid primary;
+    border-radius: 4px;
+    background: surface-light;
+    color: primary;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    height: 32px;
+    width: 120px;
+    box-shadow: 0px 2px 4px shadow;
+    [hover] {
+        background: accent;
+        color: #ffffff;
+        transform: translateY(-1px);
+    }
+    [active] {
+        background: accent;
+        outline: danger;
+    }
+    [focus] {
+        border-color: success;
+        box-shadow: 0px 0px 0px 2px rgba(46, 204, 113, 0.4);
+    }
+    [disabled] {
+        opacity: 0.4;
+        pointer-events: none;
+    }
+}
+
+TestingBadge {
+    background: primary;
+    color: #ffffff;
+    border-radius: 999px;
+    padding: 0.25 0.75;
+    text-align: center;
+    font-size: 12px;
+    position: absolute;
+    top: 2px;
+    right: 2px;
+}
+
+TestingMetric {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    width: 160px;
+    min-width: 120px;
+    max-width: 220px;
+    height: 80px;
+    min-height: 64px;
+    max-height: 120px;
+}
+
+TestingMetricValue {
+    font: display;
+    text-align: right;
+    background: surface-dark;
+    padding: 0.5 1;
+    border: 1px solid primary-dark;
+    border-radius: 8px;
+    [warning] {
+        color: warning;
+    }
+    [danger] {
+        color: danger;
+    }
+}
+
+TestingStatusIcon {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: success;
+    color: #0f1012;
+    animation: rotate 4s linear infinite;
+}
+
+TestingGrid {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: space-around;
+    padding: 1;
+}
+
+TestingGridItem {
+    flex-basis: 25%;
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin: 0.25;
+    padding: 0.5;
+}
+
+TestingFooter {
+    font-size: 12px;
+    text-align: center;
+    color: neutral;
+    margin-top: 2;
+}

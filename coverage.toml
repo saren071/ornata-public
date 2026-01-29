@@ -1,0 +1,14 @@
+[run]
+branch = true
+source = ["src/ornata"]
+omit = []
+
+[report]
+show_missing = true
+skip_covered = false
+fail_under = 100
+precision = 2
+exclude_lines = [
+    "if __name__ == '__main__':",
+    "pragma: no cover",
+]

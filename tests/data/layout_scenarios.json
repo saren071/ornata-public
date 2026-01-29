@@ -1,0 +1,106 @@
+{
+  "wrap_row": {
+    "description": "Row-based flex container that must wrap its last child when constrained.",
+    "available_width": 42,
+    "available_height": 32,
+    "style": {
+      "direction": "row",
+      "wrap": true,
+      "gap": 2,
+      "padding": 1,
+      "margin": 0,
+      "justify": "start",
+      "align": "stretch"
+    },
+    "children": [
+      {
+        "style": {
+          "width": 18,
+          "height": 6,
+          "margin": 0
+        }
+      },
+      {
+        "style": {
+          "width": 18,
+          "height": 6,
+          "margin": 0
+        }
+      },
+      {
+        "style": {
+          "width": 18,
+          "height": 6,
+          "margin": 0
+        }
+      }
+    ]
+  },
+  "wrap_column": {
+    "description": "Column-based flex container that creates a second column under tight vertical bounds.",
+    "available_width": 48,
+    "available_height": 18,
+    "style": {
+      "direction": "column",
+      "wrap": true,
+      "gap": 1,
+      "padding": 0,
+      "margin": 0,
+      "align": "center",
+      "justify": "start"
+    },
+    "children": [
+      {
+        "style": {
+          "width": 8,
+          "height": 8,
+          "margin": 0
+        }
+      },
+      {
+        "style": {
+          "width": 10,
+          "height": 9,
+          "margin": 0
+        }
+      },
+      {
+        "style": {
+          "width": 12,
+          "height": 9,
+          "margin": 0
+        }
+      }
+    ]
+  },
+  "positioning": {
+    "absolute": {
+      "description": "Absolutely positioned node honoring top/left offsets.",
+      "available_width": 120,
+      "available_height": 60,
+      "style": {
+        "position": "absolute",
+        "width": 24,
+        "height": 10,
+        "top": 6,
+        "left": 5,
+        "padding": 0,
+        "margin": 0
+      }
+    },
+    "relative": {
+      "description": "Relatively positioned node offset from its static placement.",
+      "available_width": 80,
+      "available_height": 40,
+      "style": {
+        "position": "relative",
+        "width": 20,
+        "height": 8,
+        "top": 3,
+        "left": 4,
+        "padding": 0,
+        "margin": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,149 @@
+@colors {
+  primary: #2563eb;
+  primary-dark: #1d4ed8;
+  primary-light: #3b82f6;
+  accent: #d946ef;
+  accent-dark: #a21caf;
+  accent-light: #f472b6;
+  surface: #f9fafb;
+  surface-alt: #ffffff;
+  surface-muted: #f3f4f6;
+  text: #0f172a;
+  text-muted: #475569;
+  error: #dc2626;
+  success: #16a34a;
+  warning: #ea580c;
+  shadow: rgba(15, 23, 42, 0.15);
+}
+
+@fonts {
+  base: { size: 14; weight: medium; family: "Inter"; };
+  header: { size: 20; weight: bold; family: "Inter"; };
+  mono: { size: 13; weight: medium; family: "JetBrains Mono"; };
+}
+
+Console {
+  background: surface;
+  color: text;
+  font: mono;
+  padding: 1 2;
+}
+
+Text {
+  color: text;
+  font: base;
+  line-height: 1.5;
+}
+
+Title {
+  color: text;
+  font: header;
+  text-align: center;
+  margin-bottom: 1;
+}
+
+Box {
+  background: surface-alt;
+  border: 1px;
+  border-color: rgba(15, 23, 42, 0.08);
+  border-radius: 6px;
+  padding: 1;
+  box-shadow: 0px 6px 18px shadow;
+}
+
+Panel {
+  background: surface-muted;
+  border: 1px;
+  border-color: rgba(15, 23, 42, 0.06);
+  border-radius: 12px;
+  padding: 2;
+  margin: 1;
+}
+
+Button {
+  font: base;
+  font-weight: semibold;
+  padding: 1 3;
+  margin: 0.5;
+  border-radius: 8px;
+  border: 1px;
+  border-color: primary;
+  background: linear-gradient(135deg, primary-light, primary);
+  color: #ffffff;
+  box-shadow: 0px 10px 24px rgba(37, 99, 235, 0.25);
+}
+
+Button {
+  [hover] {
+    transform: translateY(-1px);
+    box-shadow: 0px 14px 30px rgba(37, 99, 235, 0.28);
+  }
+  [active] {
+    transform: translateY(1px);
+    box-shadow: 0px 6px 16px rgba(37, 99, 235, 0.18);
+  }
+  [focus] {
+    outline: rgba(37, 99, 235, 0.35);
+    box-shadow: 0px 0px 0px 3px rgba(217, 70, 239, 0.3);
+  }
+}
+
+Card {
+  background: surface-alt;
+  border: 1px;
+  border-color: rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  padding: 2.5;
+  box-shadow: 0px 20px 40px rgba(15, 23, 42, 0.12);
+}
+
+Table {
+  background: surface-alt;
+  color: text;
+  border: 1px;
+  border-color: rgba(15, 23, 42, 0.08);
+  border-radius: 8px;
+  header-background: rgba(37, 99, 235, 0.12);
+  header-color: primary-dark;
+  row-hover-background: rgba(15, 23, 42, 0.05);
+}
+
+Alert {
+  padding: 1 2;
+  border-radius: 8px;
+  border-left: 4px solid;
+  font: base;
+}
+
+Alert {
+  [success] {
+    background: rgba(22, 163, 74, 0.12);
+    border-left-color: success;
+    color: success;
+  }
+  [error] {
+    background: rgba(220, 38, 38, 0.12);
+    border-left-color: error;
+    color: error;
+  }
+  [warning] {
+    background: rgba(234, 88, 12, 0.12);
+    border-left-color: warning;
+    color: warning;
+  }
+}
+
+ProgressBar {
+  track: rgba(203, 213, 225, 0.75);
+  fill: linear-gradient(90deg, accent-light, primary);
+  height: 1.25;
+  border-radius: 999px;
+}
+
+Toast {
+  background: rgba(255, 255, 255, 0.95);
+  color: text;
+  border-radius: 10px;
+  padding: 1 2;
+  box-shadow: 0px 16px 34px rgba(15, 23, 42, 0.18);
+}
