@@ -255,37 +255,6 @@ HSLA_PATTERN = re.compile(r"^hsla\(([\d.]+),\s*([\d.]+%?),\s*([\d.]+%?),\s*([\d.
 RGB_COMMA_PATTERN = re.compile(r"^(\d+),\s*(\d+),\s*(\d+)$")
 
 
-# ---------------------------------------------------------------------------
-# Named colors / palettes
-# ---------------------------------------------------------------------------
-
-NAMED_COLORS = {
-    "red": "\033[91m", "green": "\033[92m", "yellow": "\033[93m",
-    "blue": "\033[94m", "magenta": "\033[95m", "cyan": "\033[96m",
-    "white": "\033[97m", "purple": "\033[95m", "orange": "\033[38;5;208m",
-    "brown": "\033[38;5;94m", "gray": "\033[90m", "light_gray": "\033[37m",
-    "light_red": "\033[91m", "light_green": "\033[92m", "light_yellow": "\033[93m",
-    "light_blue": "\033[94m", "light_magenta": "\033[95m", "light_cyan": "\033[96m",
-    "light_white": "\033[97m", "black": "\033[30m", "dark_gray": "\033[90m",
-    "light_purple": "\033[95m", "light_orange": "\033[38;5;214m",
-    "light_brown": "\033[38;5;130m", "gold": "\033[38;5;220m", "pink": "\033[38;5;205m",
-    "lime": "\033[38;5;46m", "navy": "\033[38;5;17m", "teal": "\033[38;5;30m",
-    "silver": "\033[38;5;7m", "maroon": "\033[38;5;1m", "olive": "\033[38;5;58m",
-}
-
-NAMED_HEX = {
-    "red": "#ef4444", "green": "#22c55e", "yellow": "#facc15",
-    "blue": "#3b82f6", "magenta": "#d946ef", "cyan": "#06b6d4",
-    "white": "#f9fafb", "purple": "#a855f7", "orange": "#fb923c",
-    "brown": "#92400e", "gray": "#9ca3af", "light_gray": "#d1d5db",
-    "light_red": "#f87171", "light_green": "#4ade80", "light_yellow": "#fde047",
-    "light_blue": "#60a5fa", "light_magenta": "#f472b6", "light_cyan": "#67e8f9",
-    "light_white": "#ffffff", "black": "#111827", "dark_gray": "#6b7280",
-    "light_purple": "#c084fc", "light_orange": "#f97316", "light_brown": "#b45309",
-    "gold": "#fbbf24", "pink": "#ec4899", "lime": "#84cc16", "navy": "#1d4ed8",
-    "teal": "#14b8a6", "silver": "#e5e7eb", "maroon": "#b91c1c", "olive": "#4d7c0f",
-}
-
 ANSI_4BIT_RGB: ANSI4BitRGBMap = {
     "30": (0, 0, 0), "31": (187, 0, 0), "32": (0, 187, 0), "33": (187, 187, 0),
     "34": (0, 0, 187), "35": (187, 0, 187), "36": (0, 187, 187), "37": (255, 255, 255),

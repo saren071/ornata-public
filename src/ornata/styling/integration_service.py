@@ -11,13 +11,14 @@ from typing import TYPE_CHECKING, Any
 
 from ornata.api.exports.utils import get_logger
 from ornata.definitions.dataclasses.styling import StylingContext
-from ornata.styling.runtime.runtime import resolve_component_style
+from ornata.definitions.enums import BackendTarget
+from ornata.styling.runtime.runtime import resolve_backend_component_style, resolve_component_style
 from ornata.styling.theming.manager import ThemeManager
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from ornata.definitions.dataclasses.styling import ResolvedStyle
+    from ornata.definitions.dataclasses.styling import BackendStylePayload, ResolvedStyle
 
 logger = get_logger(__name__)
 
@@ -148,7 +149,67 @@ class StylingIntegrationService:
         except Exception as e:
             logger.debug(f"Failed to resolve style for component '{component_name}': {e}")
             return None
-    
+
+    def resolve_backend_style(
+        self,
+        component_name: str,
+        state: dict[str, Any] | None = None,
+        theme_overrides: dict[str, Any] | None = None,
+        renderer_type: str | None = None,
+        backend: BackendTarget = BackendTarget.GUI,
+        context_overrides: dict[str, Any] | None = None
+    ) -> BackendStylePayload | None:
+        """Resolve backend-conditioned style for a component.
+
+        Parameters
+        ----------
+        component_name : str
+            Component name to resolve style for.
+        state : dict[str, Any] | None
+            Component state for conditional styling.
+        theme_overrides : dict[str, Any] | None
+            Theme overrides for this component.
+        renderer_type : str | None
+            Target renderer type for capability-specific styling.
+        backend : BackendTarget
+            Target backend (GUI, CLI, TTY).
+        context_overrides : dict[str, Any] | None
+            Additional context overrides.
+
+        Returns
+        -------
+        BackendStylePayload | None
+            Backend-conditioned styling bundle or None if resolution fails.
+        """
+        if not state:
+            state = {}
+        if not theme_overrides:
+            theme_overrides = {}
+        if not context_overrides:
+            context_overrides = {}
+
+        try:
+            # Get renderer capabilities
+            if renderer_type:
+                caps = self.get_renderer_capabilities(renderer_type)
+            else:
+                caps = self._get_default_capabilities(backend.value)
+
+            # Merge with context overrides
+            caps.update(context_overrides)
+
+            # Resolve backend-conditioned style
+            return resolve_backend_component_style(
+                component_name=component_name,
+                state=state,
+                theme_overrides=theme_overrides,
+                caps=caps,
+                backend=backend,
+            )
+        except Exception as e:
+            logger.debug(f"Failed to resolve backend style for component '{component_name}': {e}")
+            return None
+
     def resolve_color_token(self, token: str) -> str | None:
         """Resolve a color token through the theme system.
         

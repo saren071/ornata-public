@@ -11,10 +11,10 @@ from typing import TYPE_CHECKING, Any
 from ornata.api.exports.definitions import BackendTarget, Patch, PatchType, VDOMNode, VDOMTree
 from ornata.api.exports.utils import get_logger
 from ornata.rendering.adapters.base import VDOMAdapter
-from ornata.styling.adapters.gui_mapper import GUIMapper
 
 if TYPE_CHECKING:
-    from ornata.api.exports.definitions import ResolvedStyle, StandardHostObject
+    from ornata.api.exports.definitions import StandardHostObject
+    from ornata.definitions.dataclasses.styling import BackendStylePayload
 
 logger = get_logger(__name__)
 
@@ -62,34 +62,27 @@ class GUIAdapter(VDOMAdapter):
                 elif patch.patch_type == PatchType.REPLACE_ROOT:
                     self._apply_replace_root_patch(patch)
     
-    def _resolve_style_for_node(self, node: VDOMNode) -> ResolvedStyle | None:
-        """Resolve style for a VDOM node using the ornata.styling system."""
+    def _resolve_backend_style_for_node(self, node: VDOMNode) -> BackendStylePayload | None:
+        """Resolve backend-conditioned style for a VDOM node using the styling system."""
         if not self._styling_enabled:
             return None
-           
+
         try:
-            from ornata.api.exports.definitions import StylingContext
-            from ornata.styling.runtime import resolve_component_style
-            
+            from ornata.styling.runtime import resolve_backend_component_style
+
             component_name = node.component_name
             state = node.props.get("state", {})
             theme_overrides = node.props.get("theme_overrides", {})
-            
-            context = StylingContext(
+
+            return resolve_backend_component_style(
                 component_name=component_name,
                 state=state,
                 theme_overrides=theme_overrides,
-                caps=self._get_gui_capabilities()
-            )
-            
-            return resolve_component_style(
-                component_name=component_name,
-                state=state,
-                theme_overrides=theme_overrides,
-                caps=context.caps
+                caps=self._get_gui_capabilities(),
+                backend=BackendTarget.GUI,
             )
         except Exception as e:
-            logger.debug(f"Failed to resolve style for node {node.component_name}: {e}")
+            logger.debug(f"Failed to resolve backend style for node {node.component_name}: {e}")
             return None
     
     def _get_gui_capabilities(self) -> dict[str, Any]:
@@ -116,21 +109,19 @@ class GUIAdapter(VDOMAdapter):
         gui_node.width = node.props.get("width", 0)
         gui_node.height = node.props.get("height", 0)
         
-        # Resolve and attach style
-        resolved_style = self._resolve_style_for_node(node)
-        if resolved_style and self._styling_enabled:
-            mapper = GUIMapper(resolved_style)
-            style_attrs = mapper.map_to_gui(
-                cell_metrics=self._get_gui_capabilities()["cell_metrics"],
-                font_metrics=self._get_gui_capabilities()["font_metrics"]
-            )
-            
+        # Resolve and attach style using backend-aware pipeline
+        backend_payload = self._resolve_backend_style_for_node(node)
+        if backend_payload and self._styling_enabled:
+            # Use renderer metadata from the styling pipeline directly
+            style_attrs = backend_payload.renderer_metadata
+            style_attrs["resolved_style"] = backend_payload.style
+
             # Store style attributes in GUI node metadata for the renderer to use
             gui_node.metadata.update(style_attrs)
-            gui_node.metadata["resolved_style"] = resolved_style
-            
+            gui_node.metadata["backend_payload"] = backend_payload
+
             # Also attach as a direct attribute if the renderer expects it
-            gui_node.style = resolved_style
+            gui_node.style = backend_payload.style
         
         # Convert children
         for child in node.children:

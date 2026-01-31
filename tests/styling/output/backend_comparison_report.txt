@@ -1,0 +1,79 @@
+======================================================================
+BACKEND STYLE COMPARISON - EVERY FIELD SHOWN
+======================================================================
+
+>>> CLI BACKEND (FULL PAYLOAD):
+----------------------------------------------------------------------
+Backend: cli
+Total fields in style: 3
+
+STYLE FIELDS:
+{
+  "keyframes": {},
+  "component_extras": {},
+  "custom_properties": {}
+}
+
+RENDERER METADATA:
+{
+  "backend": "cli",
+  "color_depth": "C256"
+}
+
+LAYOUT STYLE:
+{
+  "direction": "row",
+  "wrap": false,
+  "gap": 0,
+  "justify": "start",
+  "align": "stretch",
+  "grid_column_gap": 0,
+  "grid_row_gap": 0,
+  "overflow": "visible"
+}
+
+
+>>> GUI BACKEND (FULL PAYLOAD):
+----------------------------------------------------------------------
+Backend: gui
+Total fields in style: 3
+
+STYLE FIELDS:
+{
+  "keyframes": {},
+  "component_extras": {},
+  "custom_properties": {}
+}
+
+RENDERER METADATA:
+{
+  "backend": "gui",
+  "color_depth": "C256"
+}
+
+LAYOUT STYLE:
+{
+  "direction": "row",
+  "wrap": false,
+  "gap": 0,
+  "justify": "start",
+  "align": "stretch",
+  "grid_column_gap": 0,
+  "grid_row_gap": 0,
+  "overflow": "visible"
+}
+
+
+======================================================================
+FIELD COUNT COMPARISON
+======================================================================
+CLI style fields: 3
+GUI style fields: 3
+
+Files written to: C:\Users\sammy\Documents_old\Projects\ornata-public\tests\styling\output
+  - cli_backend_full.json (CLI full backend payload)
+  - gui_backend_full.json (GUI full backend payload)
+  - resolved_style_raw.json (Raw ResolvedStyle)
+  - cli_mapper_output.json (Old CLI mapper - limited)
+  - gui_mapper_output.json (Old GUI mapper - limited)
+  - backend_comparison_report.txt (This report)

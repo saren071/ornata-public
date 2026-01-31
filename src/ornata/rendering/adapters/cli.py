@@ -11,10 +11,11 @@ from typing import TYPE_CHECKING, Any
 from ornata.api.exports.definitions import BackendTarget, Patch, PatchType, VDOMNode, VDOMTree
 from ornata.api.exports.utils import get_logger
 from ornata.rendering.adapters.base import VDOMAdapter
-from ornata.styling.adapters.cli_mapper import CLIMapper
+from ornata.styling.colorkit.resolver import ColorResolver
 
 if TYPE_CHECKING:
-    from ornata.api.exports.definitions import ResolvedStyle, StandardHostObject
+    from ornata.api.exports.definitions import StandardHostObject
+    from ornata.definitions.dataclasses.styling import BackendStylePayload
 
 logger = get_logger(__name__)
 
@@ -42,6 +43,7 @@ class CLIAdapter(VDOMAdapter):
         
         super().__init__(backend_target, renderer_instance)
         self._styling_enabled = True
+        self._color_resolver = ColorResolver()
         logger.debug("CLI adapter initialized")
     
     def _do_initialize(self) -> None:
@@ -49,8 +51,11 @@ class CLIAdapter(VDOMAdapter):
         # CLI-specific initialization can be added here
         logger.debug("CLI adapter resources initialized")
     
-    def convert_tree(self, vdom_tree: VDOMTree) -> str:
-        """Convert a VDOM tree to CLI text output.
+    def convert_tree(self, vdom_tree: VDOMTree) -> Any:
+        """Convert a VDOM tree to CLI-compatible format.
+        
+        For the cell-based renderer, this returns the GuiNode tree from runtime
+        which contains proper layout and styling metadata.
         
         Parameters
         ----------
@@ -59,14 +64,25 @@ class CLIAdapter(VDOMAdapter):
             
         Returns
         -------
-        str
-            CLI-formatted text output.
+        Any
+            GuiNode tree for cell-based rendering, or text for fallback.
         """
+        # Try to get the GuiNode tree from runtime which has proper styling metadata
+        from ornata.core.runtime import OrnataRuntime
+        
+        # Access the runtime's last_gui_tree if available
+        # This is a bit of a hack - ideally the runtime would pass the tree directly
+        import threading
+        _runtime_storage: dict[str, Any] = getattr(threading.local(), '_ornata_runtime', None) or {}
+        gui_tree = _runtime_storage.get('last_gui_tree')
+        
+        if gui_tree is not None:
+            return gui_tree
+        
+        # Fallback to text conversion for backward compatibility
         if vdom_tree.root is None:
             return ""
-        
-        cli_text = self._convert_node_to_text(vdom_tree.root)
-        return cli_text
+        return self._convert_node_to_text(vdom_tree.root)
     
     def convert_node(self, node: VDOMNode) -> str:
         """Convert a VDOM node to CLI text format.
@@ -106,48 +122,27 @@ class CLIAdapter(VDOMAdapter):
                 elif patch.patch_type == PatchType.REPLACE_ROOT:
                     self._apply_replace_root_patch(patch)
     
-    def _resolve_style_for_node(self, node: VDOMNode) -> ResolvedStyle | None:
-        """Resolve style for a VDOM node using the ornata.styling system.
-        
-        Parameters
-        ----------
-        node : VDOMNode
-            The VDOM node to resolve style for.
-            
-        Returns
-        -------
-        ResolvedStyle | None
-            Resolved style or None if styling is disabled or resolution fails.
-        """
+    def _resolve_backend_style_for_node(self, node: VDOMNode) -> BackendStylePayload | None:
+        """Resolve backend-conditioned style for a VDOM node using the styling system."""
         if not self._styling_enabled:
             return None
-            
+
         try:
-            # Import the Styling runtime for style resolution
-            from ornata.api.exports.definitions import StylingContext
-            from ornata.styling.runtime import resolve_component_style
-            
-            # Create styling context from node
+            from ornata.styling.runtime import resolve_backend_component_style
+
             component_name = node.component_name
             state = node.props.get("state", {})
             theme_overrides = node.props.get("theme_overrides", {})
-            
-            context = StylingContext(
+
+            return resolve_backend_component_style(
                 component_name=component_name,
                 state=state,
                 theme_overrides=theme_overrides,
-                caps=self._get_cli_capabilities()
-            )
-            
-            # Resolve the style
-            return resolve_component_style(
-                component_name=component_name,
-                state=state,
-                theme_overrides=theme_overrides,
-                caps=context.caps
+                caps=self._get_cli_capabilities(),
+                backend=BackendTarget.CLI,
             )
         except Exception as e:
-            logger.debug(f"Failed to resolve style for node {node.component_name}: {e}")
+            logger.debug(f"Failed to resolve backend style for node {node.component_name}: {e}")
             return None
     
     def _get_cli_capabilities(self) -> dict[str, Any]:
@@ -169,7 +164,8 @@ class CLIAdapter(VDOMAdapter):
         """Convert a VDOM node tree to CLI text with styling."""
         
         props = node.props
-        resolved_style = self._resolve_style_for_node(node)
+        backend_payload = self._resolve_backend_style_for_node(node)
+        resolved_style = backend_payload.style if backend_payload else None
         
         # Handle different component types with styling
         if content := props.get("content"):
@@ -178,7 +174,7 @@ class CLIAdapter(VDOMAdapter):
                 if hasattr(content, "subtitle") and content.subtitle:
                     text += "\n" + str(content.subtitle)
                 if resolved_style and self._styling_enabled:
-                    text = self._apply_style_to_text(text, resolved_style)
+                    text = self._apply_style_to_text(text, backend_payload)
                 return text
         
         # Handle table data
@@ -188,8 +184,8 @@ class CLIAdapter(VDOMAdapter):
             lines: list[str] = []
             # Style headers differently
             header_line = " | ".join(str(col) for col in columns)
-            if resolved_style and self._styling_enabled:
-                header_line = self._apply_style_to_text(header_line, resolved_style)
+            if backend_payload and self._styling_enabled:
+                header_line = self._apply_style_to_text(header_line, backend_payload)
             lines.append(header_line)
             lines.append("-" * len(header_line.replace("\033[", "").replace("m", "")))  # Adjust for ANSI codes
             
@@ -201,22 +197,33 @@ class CLIAdapter(VDOMAdapter):
         # Handle button text with styling
         if content and hasattr(content, "text") and content.text:
             button_text = f"[{content.text}]"
-            if resolved_style and self._styling_enabled:
-                button_text = self._apply_style_to_text(button_text, resolved_style)
+            if backend_payload and self._styling_enabled:
+                button_text = self._apply_style_to_text(button_text, backend_payload)
             return button_text
         
-        # Handle input placeholder
+        # Handle input placeholder with actual value and cursor
         if content and hasattr(content, "placeholder") and content.placeholder:
-            input_text = f"[{content.placeholder}]"
-            if resolved_style and self._styling_enabled:
-                input_text = self._apply_style_to_text(input_text, resolved_style)
+            # Get the actual value from props if available
+            value = props.get("value", "")
+            
+            # Show typed value or placeholder
+            display_text = value if value else content.placeholder
+            
+            # Check if this input is focused via context (we'll need to pass this through)
+            is_focused = props.get("focused", False)
+            if is_focused:
+                display_text += "_"
+            
+            input_text = f"[{display_text}]"
+            if backend_payload and self._styling_enabled:
+                input_text = self._apply_style_to_text(input_text, backend_payload)
             return input_text
         
         # Handle text content
         if text_content := props.get("content"):
             if isinstance(text_content, str):
-                if resolved_style and self._styling_enabled:
-                    return self._apply_style_to_text(text_content, resolved_style)
+                if backend_payload and self._styling_enabled:
+                    return self._apply_style_to_text(text_content, backend_payload)
                 return text_content
         
         # Process children
@@ -229,66 +236,54 @@ class CLIAdapter(VDOMAdapter):
         result = "\n".join(text_parts) if text_parts else f"[{node.component_name}]"
         
         # Apply styling to the result if available
-        if resolved_style and self._styling_enabled and not text_parts:
-            result = self._apply_style_to_text(result, resolved_style)
+        if backend_payload and self._styling_enabled and not text_parts:
+            result = self._apply_style_to_text(result, backend_payload)
         
         return result
 
-    def _apply_style_to_text(self, text: str, resolved_style: ResolvedStyle) -> str:
+    def _apply_style_to_text(self, text: str, backend_payload: BackendStylePayload) -> str:
         """Apply resolved style to text content.
         
         Parameters
         ----------
         text : str
             Text content to style.
-        resolved_style : ResolvedStyle
-            Resolved style to apply.
+        backend_payload : BackendStylePayload
+            Backend-conditioned styling bundle.
             
         Returns
         -------
         str
             Styled text.
         """
-        mapper = CLIMapper(resolved_style)
-        style_attrs = mapper.map()
-        
-        # For CLI, we primarily use color information
         styled_text = text
-        if fg_color := style_attrs.get("fg"):
-            # Apply foreground color using ANSI codes
-            styled_text = f"\033[30;{self._get_ansi_code(fg_color)}m{styled_text}\033[0m"
-        
-        if bg_color := style_attrs.get("bg"):
-            # Apply background color using ANSI codes
-            styled_text = f"\033[{self._get_ansi_code(bg_color)}m{styled_text}\033[0m"
-        
+        resolved_style = backend_payload.style
+
+        if not resolved_style:
+            return styled_text
+
+        fg_code = (
+            resolved_style.color
+            if isinstance(resolved_style.color, str) and resolved_style.color.startswith("\033[")
+            else self._color_resolver.resolve_ansi(resolved_style.color)
+        )
+        bg_code = (
+            resolved_style.background
+            if isinstance(resolved_style.background, str) and resolved_style.background.startswith("\033[")
+            else self._color_resolver.resolve_background(
+                str(resolved_style.background) if resolved_style.background else None
+            )
+        )
+
+        prefix = ""
+        if fg_code:
+            prefix += fg_code
+        if bg_code:
+            prefix += bg_code
+
+        if prefix:
+            return f"{prefix}{styled_text}\033[0m"
         return styled_text
-    
-    def _get_ansi_code(self, color: str) -> str:
-        """Get ANSI color code for a color.
-        
-        Parameters
-        ----------
-        color : str
-            Color specification.
-            
-        Returns
-        -------
-        str
-            ANSI color code.
-        """
-        # Simple mapping for common colors
-        color_map = {
-            "red": "31",
-            "green": "32",
-            "yellow": "33",
-            "blue": "34",
-            "magenta": "35",
-            "cyan": "36",
-            "white": "37",
-            "black": "30"
-        }
-        return color_map.get(color.lower(), "37")  # Default to white
     
     def _apply_add_node_patch(self, patch: Patch) -> None:
         """Apply an add node patch.

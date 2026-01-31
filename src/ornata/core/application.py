@@ -7,35 +7,29 @@ import sys
 import time
 from typing import TYPE_CHECKING, Any
 
-from ornata.api.exports.rendering import (
-    ANSIRenderer,
-    GuiApplication,
-    TerminalApp,
-    TerminalSession,
-    TTYRenderer,
-    create_cli_input_pipeline,
-)
-from ornata.api.exports.rendering import (
-    get_runtime as get_gui_runtime,
-)
 from ornata.core.runtime import OrnataRuntime
 from ornata.definitions.dataclasses.core import AppConfig, RuntimeFrame
-from ornata.definitions.dataclasses.rendering import BackendTarget
-from ornata.utils import get_logger
+from ornata.definitions.enums import BackendTarget
+from ornata.rendering.backends.cli.input import CLIInputPipeline, create_cli_input_pipeline
+from ornata.rendering.backends.cli.platform.conhost import get_terminal_size
+from ornata.rendering.backends.cli.terminal_app import TerminalApp, TerminalSession
+from ornata.rendering.backends.gui.app import GuiApplication
+from ornata.rendering.backends.gui.runtime import get_runtime as get_gui_runtime
+from ornata.utils.logging import get_logger
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from threading import Thread
 
-    from ornata.api.exports.definitions import RenderOutput, VDOMRendererContext, VDOMTree
-    from ornata.api.exports.events import EventSubsystem
     from ornata.definitions.dataclasses.components import Component
-    from ornata.definitions.dataclasses.rendering import GuiNode
-    from ornata.rendering.backends.cli.input import CLIInputPipeline
+    from ornata.definitions.dataclasses.rendering import GuiNode, RenderOutput
     from ornata.rendering.core.base_renderer import Renderer
 
+if TYPE_CHECKING:
+    from ornata.api.exports.events import EventSubsystem
 
-def register_backend_with_bridge(backend_target: BackendTarget, renderer: Renderer) -> VDOMRendererContext:
+
+def register_backend_with_bridge(backend_target: BackendTarget, renderer: Renderer) -> Any:
     """
     Register `renderer` with the global VDOM bridge.
 
@@ -46,7 +40,7 @@ def register_backend_with_bridge(backend_target: BackendTarget, renderer: Render
 
     ### Returns
     
-    * `VDOMRendererContext`: Context object managed by the VDOM bridge.
+    * `Any`: Context object managed by the VDOM bridge.
 
     ### See Also
     
@@ -60,13 +54,13 @@ def register_backend_with_bridge(backend_target: BackendTarget, renderer: Render
     return bridge.register_renderer(backend_target, renderer)
 
 
-def render_vdom_tree_bridge(vdom_tree: VDOMTree, backend_target: BackendTarget) -> object:
+def render_vdom_tree_bridge(vdom_tree: Any, backend_target: BackendTarget) -> object:
     """
     Render a VDOM tree through the global VDOM bridge.
 
     ### Parameters
     
-    * **vdom_tree** (`VDOMTree`): VDOM tree produced by the runtime.
+    * **vdom_tree** (`Any`): VDOM tree produced by the runtime.
     * **backend_target** (`BackendTarget`): Backend for which the tree should be rendered.
 
     ### Returns
@@ -204,20 +198,21 @@ class Application:
 
         self._config = config or AppConfig()
         self._runtime = OrnataRuntime(self._config)
-        self._builder: Callable[[], Component] | None = None
+        self._builder: Any = None
         self._logger = get_logger(__name__)
-        self._current_root: Component | None = None
+        self._current_root: Any = None
         self._backend_instances: dict[BackendTarget, Renderer] = {}
-        self._backend_contexts: dict[BackendTarget, VDOMRendererContext] = {}
+        self._backend_contexts: dict[BackendTarget, Any] = {}
         self._last_output: RenderOutput | None = None
         self._loop_interval = 1.0 / 30.0
         self._loop_mode = False
         self._running = False
         self._event_subsystem: EventSubsystem | None = None
         self._cli_input_pipeline: CLIInputPipeline | None = None
-        self._cli_terminal_session: TerminalSession | None = None
-        self._gui_driver: _GUIRenderDriver | None = None
+        self._cli_terminal_session: Any = None
+        self._gui_driver: Any = None
         self._event_loop_started = False
+        self._input_values: dict[str, str] = {}
 
     @property
     def config(self) -> AppConfig:
@@ -285,13 +280,13 @@ class Application:
         self._config.stylesheets.append(path)
         self._runtime.load_stylesheet(path)
 
-    def mount(self, component_or_factory: Component | Callable[[], Component]) -> None:
+    def mount(self, component_or_factory: Any) -> None:
         """
         Register a root component or factory for the application.
 
         ### Parameters
         
-        * **component_or_factory** (`Component | Callable[[], Component]`): 
+        * **component_or_factory** (`Any`): 
           Root component instance or a factory function that returns the root component.
 
         ### Returns
@@ -325,6 +320,7 @@ class Application:
 
         if self._builder is None:
             raise RuntimeError("No component tree registered. Call mount() first.")
+        self._refresh_viewport_from_environment()
         component = self._builder()
         self._current_root = component
         self._logger.info("Starting application '%s'", self._config.title)
@@ -372,6 +368,7 @@ class Application:
         if backend is BackendTarget.TTY:
             self._start_cli_input_pipeline(subsystem)
         elif backend is BackendTarget.GUI:
+            self._refresh_viewport_from_environment()
             self._ensure_gui_driver(self._resolve_gui_backend_name(backend), loop_mode=True)
 
         self._running = True
@@ -379,6 +376,7 @@ class Application:
 
         try:
             while self._running:
+                self._refresh_viewport_from_environment()
                 component = self._builder()
                 self._current_root = component
                 frame = self._runtime.run(component)
@@ -463,7 +461,7 @@ class Application:
         self,
         frame: RuntimeFrame,
         backend_target: BackendTarget,
-        factory: Callable[[BackendTarget], Renderer],
+        factory: Any,
         *,
         loop_mode: bool,
     ) -> None:
@@ -474,7 +472,7 @@ class Application:
         
         * **frame** (`RuntimeFrame`): Runtime frame to dispatch.
         * **backend_target** (`BackendTarget`): Target backend for the application.
-        * **factory** (`Callable[[BackendTarget], Renderer]`): Factory function to create the renderer.
+        * **factory** (`Any`): Factory function to create the renderer.
         * **loop_mode** (`bool`): Whether the frame is being rendered in loop mode.
 
         ### Returns
@@ -518,7 +516,7 @@ class Application:
     def _ensure_backend(
         self,
         backend_target: BackendTarget,
-        factory: Callable[[], Renderer],
+        factory: Any,
     ) -> Renderer:
         """
         Ensure a backend and VDOM context exist for `backend_target`.
@@ -526,7 +524,7 @@ class Application:
         ### Parameters
         
         * **backend_target** (`BackendTarget`): Target backend for the application.
-        * **factory** (`Callable[[], Renderer]`): Factory function to create the renderer.
+        * **factory** (`Any`): Factory function to create the renderer.
 
         ### Returns
         
@@ -543,7 +541,7 @@ class Application:
     def _ensure_backend_context(
         self,
         backend_target: BackendTarget,
-        factory: Callable[[], Renderer] | None = None,
+        factory: Any | None = None,
     ) -> None:
         """
         Register a renderer with the bridge if not already tracked.
@@ -551,7 +549,7 @@ class Application:
         ### Parameters
         
         * **backend_target** (`BackendTarget`): Target backend for the application.
-        * **factory** (`Callable[[], Renderer] | None`, optional): Factory function to create the renderer.
+        * **factory** (`Any | None`, optional): Factory function to create the renderer.
 
         ### Returns
         
@@ -568,6 +566,21 @@ class Application:
             self._backend_instances[backend_target] = backend
         context = register_backend_with_bridge(backend_target, backend)
         self._backend_contexts[backend_target] = context
+
+    def _refresh_viewport_from_environment(self) -> None:
+        """
+        Update viewport dimensions using the active environment.
+
+        For terminal backends, detect the current terminal size to ensure layout
+        calculations respect the actual viewport. GUI backends currently rely on
+        the configured window size.
+        """
+
+        backend = self._config.backend
+        if backend in {BackendTarget.CLI, BackendTarget.TTY}:
+            width, height = get_terminal_size()
+            self._config.viewport_width = int(width)
+            self._config.viewport_height = int(height)
 
     def _prepare_render_tree(self, backend_target: BackendTarget) -> object:
         """
@@ -667,9 +680,9 @@ class Application:
 
         if self._builder is None:
             raise RuntimeError("No component tree registered. Call mount() first.")
-        terminal_app = _ApplicationTerminalApp(self)
-        self._logger.debug("Terminal app: %s", terminal_app)
         session = TerminalSession(sys.stdout)
+        terminal_app = _ApplicationTerminalApp(self, session)
+        self._logger.debug("Terminal app: %s", terminal_app)
         self._logger.debug("Terminal session: %s", session)
         self._cli_terminal_session = session
         self._running = True
@@ -692,11 +705,28 @@ class Application:
 
         if self._builder is None:
             raise RuntimeError("No component tree registered. Call mount() first.")
+        
+        # Refresh viewport to detect terminal resize
+        self._refresh_viewport_from_environment()
+        
         component = self._builder()
         self._current_root = component
+        
+        # Inject stored input values into the component tree
+        self._restore_input_values(component, self._input_values)
+        
         frame = self._runtime.run(component)
         output, _ = self._render_terminal_output(frame, BackendTarget.CLI, self._create_cli_renderer)
         return self._coerce_output_text(output)
+
+    def _restore_input_values(self, component: Component, storage: dict[str, str]) -> None:
+        """Recursively restore input values to component tree."""
+        if hasattr(component, 'component_id') and component.component_id:
+            if component.component_id in storage and hasattr(component, 'value'):
+                component.value = storage[component.component_id]
+        if hasattr(component, 'children'):
+            for child in component.children:
+                self._restore_input_values(child, storage)
 
     @staticmethod
     def _clear_terminal() -> None:
@@ -711,34 +741,18 @@ class Application:
         print("\x1b[2J\x1b[H", end="")
 
     def _create_cli_renderer(self, backend_target: BackendTarget) -> Renderer:
-        """
-        Create the CLI renderer.
+        """Create the CLI renderer using new cell-based TerminalRenderer."""
+        from ornata.definitions.dataclasses.styling import ANSIColor
+        from ornata.rendering.backends.cli.terminal import TerminalRenderer
 
-        ### Parameters
-        
-        * **backend_target** (`BackendTarget`): Target backend for the application.
-
-        ### Returns
-        
-        * `Renderer`: Renderer for the backend.
-        """
-
-        return ANSIRenderer(backend_target)
+        # Default background for the terminal (dark theme)
+        default_bg = ANSIColor(13, 17, 23)  # #0d1117
+        return TerminalRenderer(backend_target, default_bg=default_bg, use_truecolor=True)
 
     def _create_tty_renderer(self, backend_target: BackendTarget) -> Renderer:
-        """
-        Create the TTY renderer.
-
-        ### Parameters
-        
-        * **backend_target** (`BackendTarget`): Target backend for the application.
-
-        ### Returns
-        
-        * `Renderer`: Renderer for the backend.
-        """
-
-        return TTYRenderer(backend_target)
+        """Create the TTY renderer."""
+        from ornata.rendering.backends.cli.terminal import TerminalRenderer
+        return TerminalRenderer(backend_target)
 
     def _resolve_gui_backend_name(self, backend: BackendTarget) -> str:
         """
@@ -897,21 +911,32 @@ class _GUIRenderDriver:
 class _ApplicationTerminalApp(TerminalApp):
     """Adapter that exposes Application renders to TerminalSession."""
 
-    def __init__(self, application: Application) -> None:
+    def __init__(self, application: Application, session: TerminalSession) -> None:
         super().__init__()
         self._application = application
+        self._session = session
 
     def render(self) -> str:
         """Build and return the latest application frame."""
-
         return self._application._render_cli_frame_content()
 
     def on_key(self, key: str) -> None:
         """Handle quit gestures and forward to the Application."""
+        try:
+            super().on_key(key)
+            if key.lower() in {"q", "escape", "ctrl+c"}:
+                self.should_quit = True
+        except Exception as exc:
+            # Log but don't crash on key handling errors
+            import logging
+            logging.getLogger(__name__).debug("Error handling key %r: %s", key, exc)
 
-        super().on_key(key)
-        if key.lower() in {"q", "escape", "ctrl+c"}:
-            self.should_quit = True
+    def on_tick(self, dt: float) -> None:
+        """Update input values from input manager into application storage."""
+        input_manager = self._session.input_manager
+        # Copy values from input manager to application's storage
+        for component_id, value in input_manager._component_values.items():
+            self._application._input_values[component_id] = value
 
 
 __all__ = [

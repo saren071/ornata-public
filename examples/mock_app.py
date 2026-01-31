@@ -5,12 +5,14 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from ornata.api.exports.definitions import ComponentAccessibility, ComponentContent, ComponentPlacement, ComponentRenderHints, InteractionDescriptor, InteractionType
-from ornata.application import AppConfig, Application, BackendTarget
-from ornata.components import (
+from ornata.application import (
+    AppConfig,
+    Application,
+    BackendTarget,
     ButtonComponent,
     ContainerComponent,
     InputComponent,
+    InteractionType,
     TableComponent,
     TextComponent,
 )
@@ -30,12 +32,10 @@ class MissionControlUI:
 
         header = TextComponent(
             component_name="mission-header",
-            content=ComponentContent(
-                title=self.mission_name,
-                subtitle=datetime.now().strftime("%B %d, %Y - %H:%M"),
-            ),
-            placement=ComponentPlacement(order=0),
-            accessibility=ComponentAccessibility(label="Mission control header"),
+            title=self.mission_name,
+            subtitle=datetime.now().strftime("%B %d, %Y - %H:%M"),
+            order=0,
+            label="Mission control header",
         )
 
         telemetry_table = TableComponent(
@@ -48,36 +48,34 @@ class MissionControlUI:
             ],
             selection_mode="single",
             selection=[0],
-            placement=ComponentPlacement(order=1),
+            order=1,
         )
 
         command_input = InputComponent(
             component_name="command-entry",
-            content=ComponentContent(placeholder="Type command..."),
-            accessibility=ComponentAccessibility(label="Command entry input"),
-            interactions=InteractionDescriptor(
-                types=frozenset({InteractionType.CHANGE, InteractionType.SUBMIT}),
-                cursor="text",
-            ),
-            placement=ComponentPlacement(order=2),
+            placeholder="Type command...",
+            label="Command entry input",
+            interactions_types=frozenset({InteractionType.CHANGE, InteractionType.SUBMIT}),
+            cursor="text",
+            order=2,
         )
+        command_input.register_event_handler(InteractionType.SUBMIT, self._on_command_submit)
 
         launch_button = ButtonComponent(
             component_name="launch-button",
-            content=ComponentContent(text="Initiate Launch Sequence"),
-            render_hints=ComponentRenderHints(priority=1, cacheable=False),
-            interactions=InteractionDescriptor(
-                types=frozenset({InteractionType.CLICK, InteractionType.ACTIVATE}),
-                cursor="pointer",
-            ),
-            placement=ComponentPlacement(order=3),
+            text="Initiate Launch Sequence",
+            priority=1,
+            cacheable=False,
+            interactions_types=frozenset({InteractionType.CLICK, InteractionType.ACTIVATE}),
+            cursor="pointer",
+            order=3,
         )
         launch_button.register_event_handler(InteractionType.CLICK, self._log_launch)
 
         action_bar = ContainerComponent(
             component_name="action-bar",
             children=[command_input, launch_button],
-            placement=ComponentPlacement(order=4),
+            order=4,
         )
 
         return ContainerComponent(
@@ -89,6 +87,10 @@ class MissionControlUI:
     def _log_launch(event: ComponentEvent) -> None:
         print(f"[developer] Launch event fired from {event.component_id}")
 
+    @staticmethod
+    def _on_command_submit(event: ComponentEvent) -> None:
+        print(f"[developer] Command submitted: {event}")
+
 
 def main() -> None:
     """Developer entry point using the Ornata Application API."""
@@ -96,13 +98,12 @@ def main() -> None:
     config = AppConfig(
         title="Aquila Operations",
         backend=BackendTarget.CLI,
-        viewport_width=1280,
-        viewport_height=720,
         stylesheets=[
             "examples/styles/base.osts",  # Example stylesheet shipped alongside the app
         ],
     )
     print("[demo] Resolved Backend:", config.backend)
+    print("[demo] Initial viewport (will update dynamically):", config.viewport_width, "x", config.viewport_height)
     app = Application(config)
     ui = MissionControlUI(mission_name="Aquila Operations")
     app.mount(ui.build)

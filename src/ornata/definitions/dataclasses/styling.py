@@ -5,22 +5,30 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal
 
+from ornata.definitions.enums import BackendTarget
+
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from ornata.definitions.dataclasses.components import ComponentRule
     from ornata.definitions.dataclasses.effects import Animation, Keyframes
+    from ornata.definitions.dataclasses.layout import LayoutStyle
     from ornata.definitions.type_alias import ColorSpec, LengthUnit
+
 
 PX_UNIT: Literal["px"] = "px"
 
 
 @dataclass(slots=True, frozen=True)
 class PaletteEntry:
-    """Palette entry mapping a semantic token to colour values."""
+    """Palette entry mapping a semantic token to a color literal.
+    
+    This represents a named color in the palette that can be resolved
+    to different backend-specific formats (ANSI for CLI, RGB for GUI).
+    """
     token: str
-    ansi: str
-    hex_value: str
+    literal: ColorLiteral
+    cached_rgb: tuple[int, int, int] | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -222,6 +230,56 @@ class ColorBlend:
 
 
 @dataclass(slots=True, frozen=True)
+class ColorLiteral:
+    """Renderer-agnostic color literal for internal representation.
+    
+    Represents a color value that is independent of any rendering backend.
+    The kind field indicates the color format, and value holds the actual data.
+    
+    Attributes:
+        kind: The color format - "hex", "rgb", "rgba", "hsl", "hsla", "ref", or "named"
+        value: The color data:
+            - hex: "#rrggbb" or "#rrggbbaa" string
+            - rgb/rgba: (r, g, b) or (r, g, b, a) tuple
+            - hsl/hsla: (h, s, l) or (h, s, l, a) tuple
+            - ref/named: the reference name string
+    """
+    kind: Literal["hex", "rgb", "rgba", "hsl", "hsla", "ref", "named"]
+    value: str | tuple[int, int, int] | tuple[int, int, int, int] | tuple[int, int, int, float] | tuple[float, float, float] | tuple[float, float, float, float]
+    
+    def to_rgb(self) -> tuple[int, int, int] | None:
+        """Convert the color literal to an RGB tuple.
+        
+        Returns:
+            RGB tuple (r, g, b) or None if conversion is not possible
+        """
+        from ornata.styling.colorkit.spaces import ColorSpaces
+        
+        if self.kind == "hex":
+            hex_str = self.value if isinstance(self.value, str) else ""
+            if len(hex_str) >= 6:
+                cleaned = hex_str.lstrip("#")
+                try:
+                    r = int(cleaned[0:2], 16)
+                    g = int(cleaned[2:4], 16)
+                    b = int(cleaned[4:6], 16)
+                    return (r, g, b)
+                except ValueError:
+                    return None
+        elif self.kind in ("rgb", "rgba"):
+            if isinstance(self.value, tuple) and len(self.value) >= 3:
+                return (int(self.value[0]), int(self.value[1]), int(self.value[2]))
+        elif self.kind in ("hsl", "hsla"):
+            if isinstance(self.value, tuple) and len(self.value) >= 3:
+                h, s, l_val = float(self.value[0]), float(self.value[1]), float(self.value[2])
+                rgb = ColorSpaces.hsl_to_rgb((h, s, l_val))
+                if rgb:
+                    return (int(rgb[0]), int(rgb[1]), int(rgb[2]))
+                return None
+        return None
+
+
+@dataclass(slots=True, frozen=True)
 class BoxShadow:
     """Box shadow definition."""
     offset_x: Length
@@ -267,9 +325,20 @@ class StylingContext:
     state: Mapping[str, bool] | None = None
     theme_overrides: Mapping[str, str] | None = None
     caps: Any = None
+    backend: BackendTarget = BackendTarget.GUI
 
     def active_states(self) -> frozenset[str]:
         return frozenset(key for key, value in (self.state or {}).items() if value)
+
+
+@dataclass(slots=True)
+class BackendStylePayload:
+    """Backend-conditioned styling data produced by the styling subsystem."""
+    backend: BackendTarget
+    style: ResolvedStyle
+    renderer_metadata: dict[str, Any] = field(default_factory=dict)
+    layout_style: LayoutStyle | None = None
+    extras: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(slots=True)
@@ -594,6 +663,7 @@ __all__ = [
     "Color",
     "ColorBlend",
     "ColorFunction",
+    "ColorLiteral",
     "ColorToken",
     "Font",
     "FontDef",
@@ -611,6 +681,7 @@ __all__ = [
     "Span",
     "Stylesheet",
     "StylingContext",
+    "BackendStylePayload",
     "TextShadow",
     "TextStyle",
     "Theme",

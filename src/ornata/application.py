@@ -14,7 +14,24 @@ This module exposes the main entry point and configuration objects.
 
 from __future__ import annotations
 
-from ornata.api.exports.definitions import AppConfig, BackendTarget, RuntimeFrame
+from ornata.api.exports.components import (
+    ButtonComponent,
+    ContainerComponent,
+    InputComponent,
+    TableComponent,
+    TextComponent,
+)
+from ornata.api.exports.definitions import (
+    AppConfig,
+    BackendTarget,
+    ComponentAccessibility,
+    ComponentContent,
+    ComponentPlacement,
+    ComponentRenderHints,
+    InteractionDescriptor,
+    InteractionType,
+    RuntimeFrame,
+)
 from ornata.core.application import Application
 
 __all__ = [
@@ -22,4 +39,15 @@ __all__ = [
     "AppConfig",
     "BackendTarget",
     "RuntimeFrame",
+    "ButtonComponent",
+    "ContainerComponent",
+    "InputComponent",
+    "TableComponent",
+    "TextComponent",
+    "ComponentAccessibility",
+    "ComponentContent",
+    "ComponentPlacement",
+    "ComponentRenderHints",
+    "InteractionDescriptor",
+    "InteractionType",
 ]

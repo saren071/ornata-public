@@ -209,7 +209,6 @@ _EXPORT_TARGETS: dict[str, str] = {
     "HSLA_PATTERN": "ornata.definitions.constants:HSLA_PATTERN",
     "RGB_COMMA_PATTERN": "ornata.definitions.constants:RGB_COMMA_PATTERN",
     "NAMED_COLORS": "ornata.definitions.constants:NAMED_COLORS",
-    "NAMED_HEX": "ornata.definitions.constants:NAMED_HEX",
     "ANSI_4BIT_RGB": "ornata.definitions.constants:ANSI_4BIT_RGB",
     "BACKGROUND_COLORS": "ornata.definitions.constants:BACKGROUND_COLORS",
     "EFFECTS": "ornata.definitions.constants:EFFECTS",

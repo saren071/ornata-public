@@ -6,145 +6,16 @@ import math
 import threading
 import time
 from dataclasses import dataclass, field
-from textwrap import wrap
 from typing import TYPE_CHECKING, Any
 
 from ornata.definitions.dataclasses.components import ComponentAccessibility, ComponentContent, ComponentDataBinding, ComponentKind, ComponentPlacement, ComponentRenderHints, InteractionDescriptor
 from ornata.definitions.dataclasses.styling import Color, TextStyle
 from ornata.definitions.enums import BackendTarget, BlendMode, FrameState, InputEventType, RendererType, SignalType, TerminalCapability, TerminalType
 from ornata.definitions.flags import RenderCapability
-from ornata.definitions.unicode_assets import BORDER_STYLES
 
 if TYPE_CHECKING:
     from ornata.api.exports.events import EventBus
     from ornata.definitions.protocols import LayoutStyleProtocol, ResolvedStyleProtocol
-
-def _default_border_chars() -> dict[str, str]:
-    return dict(BORDER_STYLES.get("light", {}))
-
-def _default_emphasize_chars() -> dict[str, str]:
-    return dict(BORDER_STYLES.get("heavy", BORDER_STYLES.get("light", {})))
-
-@dataclass(slots=True)
-class UnicodeCanvas:
-    """Utility canvas that accumulates Unicode characters for terminal output."""
-    width: int
-    height: int
-    border_chars: dict[str, str] = field(default_factory=_default_border_chars)
-    emphasize_chars: dict[str, str] = field(default_factory=_default_emphasize_chars)
-    _grid: list[list[str]] = field(init=False)
-
-    def __post_init__(self) -> None:
-        self._grid = [[" " for _ in range(self.width)] for _ in range(self.height)]
-
-    def draw_panel(self, rect: tuple[int, int, int, int], *, label: str | None = None, emphasize: bool = False) -> None:
-        bounds = self._clip_rect(rect)
-        if bounds is None:
-            return
-        glyphs = self._select_border_chars(emphasize)
-        x0, y0, x1, y1 = bounds
-        if x1 <= x0 or y1 <= y0:
-            self._plot(x0, y0, glyphs["tl"])
-            return
-        for x in range(x0 + 1, x1):
-            self._plot(x, y0, glyphs["h"])
-            self._plot(x, y1, glyphs["h"])
-        for y in range(y0 + 1, y1):
-            self._plot(x0, y, glyphs["v"])
-            self._plot(x1, y, glyphs["v"])
-        self._plot(x0, y0, glyphs["tl"])
-        self._plot(x1, y0, glyphs["tr"])
-        self._plot(x0, y1, glyphs["bl"])
-        self._plot(x1, y1, glyphs["br"])
-        if label:
-            trimmed = label[: max(0, (x1 - x0) - 1)]
-            if trimmed:
-                self._write(x0 + 1, y0, f" {trimmed}")
-
-    def draw_text_block(self, rect: tuple[int, int, int, int], text: str) -> None:
-        bounds = self._clip_rect(rect)
-        if bounds is None:
-            return
-        x0, y0, x1, y1 = bounds
-        max_width = max(1, x1 - x0 + 1)
-        max_height = max(1, y1 - y0 + 1)
-        lines: list[str] = []
-        for paragraph in text.splitlines() or [""]:
-            if not paragraph.strip():
-                lines.append("")
-                continue
-            wrapped = wrap(
-                paragraph,
-                width=max_width,
-                drop_whitespace=True,
-                replace_whitespace=False,
-            )
-            lines.extend(wrapped or [""])
-        for row_idx, line in enumerate(lines[:max_height]):
-            self._write(x0, y0 + row_idx, line[:max_width].ljust(max_width))
-
-    def draw_table(self, rect: tuple[int, int, int, int], columns: list[str], rows: list[list[str]]) -> None:
-        bounds = self._clip_rect(rect)
-        if bounds is None:
-            return
-        x0, y0, x1, y1 = bounds
-        max_width = max(1, x1 - x0 + 1)
-        max_height = max(1, y1 - y0 + 1)
-        if max_height < 2:
-            return
-        grid_lines: list[str] = []
-        formatted_header = self._format_row(columns, max_width)
-        grid_lines.append(formatted_header)
-        separator = self.border_chars["h"]
-        grid_lines.append(separator * min(len(formatted_header), max_width))
-        for row in rows:
-            grid_lines.append(self._format_row(row, max_width))
-            if len(grid_lines) >= max_height:
-                break
-        for offset, line in enumerate(grid_lines[:max_height]):
-            self._write(x0, y0 + offset, line[:max_width].ljust(max_width))
-
-    def render(self) -> str:
-        rows = ["".join(row).rstrip() for row in self._grid]
-        return "\n".join(row.rstrip() for row in rows).rstrip() + "\n"
-
-    def _format_row(self, values: list[str], max_width: int) -> str:
-        if not values:
-            return ""
-        slots = max(1, len(values))
-        spacer = 1 if slots > 1 else 0
-        cell_width = max(1, (max_width - (spacer * (slots - 1))) // slots)
-        cells = [str(value).strip()[:cell_width].ljust(cell_width) for value in values]
-        line = (" " * spacer).join(cells)
-        return line[:max_width]
-
-    def _write(self, x: int, y: int, text: str) -> None:
-        if not (0 <= y < self.height):
-            return
-        for idx, ch in enumerate(text):
-            self._plot(x + idx, y, ch)
-
-    def _plot(self, x: int, y: int, char: str) -> None:
-        if not (0 <= x < self.width and 0 <= y < self.height):
-            return
-        if not char:
-            return
-        self._grid[y][x] = char[0]
-
-    def _clip_rect(self, rect: tuple[int, int, int, int]) -> tuple[int, int, int, int] | None:
-        x, y, width, height = rect
-        if width <= 0 or height <= 0:
-            return None
-        x0 = max(0, x)
-        y0 = max(0, y)
-        x1 = min(self.width - 1, x + width - 1)
-        y1 = min(self.height - 1, y + height - 1)
-        if x0 > x1 or y0 > y1:
-            return None
-        return x0, y0, x1, y1
-
-    def _select_border_chars(self, emphasize: bool) -> dict[str, str]:
-        return self.emphasize_chars if emphasize else self.border_chars
 
 
 @dataclass(slots=True)
@@ -886,7 +757,6 @@ __all__ = [
     "TerminalState",
     "TextSurface",
     "Transform",
-    "UnicodeCanvas",
     "WindowPumpHandle",
     "Win32WindowManager",
 ]

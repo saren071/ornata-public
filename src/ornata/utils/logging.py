@@ -15,6 +15,8 @@ _logging_initialized = False
 
 # Keep constants for logging here because logging is used EVERYWHERE and causes a bunch of circular issues
 LOGGING_ENABLED: bool = True
+LOG_TO_CONSOLE: bool = False  # Default: only log to file to keep terminal clean
+LOG_TO_FILE: bool = True
 
 LOG_LEVEL_COLORS = {
     logging.DEBUG: "#00FFFF",
@@ -146,6 +148,7 @@ def _initialize_root_logging() -> None:
     """Initialize root logging with console and file handlers.
 
     This function is idempotent and safe to call multiple times.
+    Controlled by LOGGING_ENABLED, LOG_TO_CONSOLE, and LOG_TO_FILE flags.
     """
     global _logging_initialized
 
@@ -156,25 +159,29 @@ def _initialize_root_logging() -> None:
         _logging_initialized = True
         return
 
-    log_dir = _ensure_log_directory()
-    log_path = log_dir / LOG_FILE_NAME
-
-    if log_path.exists():
-        _rotate_log_files(log_path)
-
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.DEBUG)
 
-    if not any(isinstance(h, OrnataHandler) for h in root_logger.handlers):
-        root_logger.addHandler(OrnataHandler())
+    # Console handler (conditional)
+    if LOG_TO_CONSOLE:
+        if not any(isinstance(h, OrnataHandler) for h in root_logger.handlers):
+            root_logger.addHandler(OrnataHandler())
 
-    file_formatter = logging.Formatter(
-        "[%(asctime)s] %(levelname)8s %(name)s:%(lineno)d - %(message)s",
-        datefmt="%H:%M:%S",
-    )
-    file_handler = logging.FileHandler(log_path, encoding="utf-8")
-    file_handler.setFormatter(file_formatter)
-    root_logger.addHandler(file_handler)
+    # File handler (conditional)
+    if LOG_TO_FILE:
+        log_dir = _ensure_log_directory()
+        log_path = log_dir / LOG_FILE_NAME
+
+        if log_path.exists():
+            _rotate_log_files(log_path)
+
+        file_formatter = logging.Formatter(
+            "[%(asctime)s] %(levelname)8s %(name)s:%(lineno)d - %(message)s",
+            datefmt="%H:%M:%S",
+        )
+        file_handler = logging.FileHandler(log_path, encoding="utf-8")
+        file_handler.setFormatter(file_formatter)
+        root_logger.addHandler(file_handler)
 
     _logging_initialized = True
 

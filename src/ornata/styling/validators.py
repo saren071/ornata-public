@@ -190,7 +190,8 @@ class StyleValidator:
         Returns:
             True if valid, False otherwise
         """
-        from ornata.definitions.constants import NAMED_COLORS, NAMED_HEX, VALUE_PATTERNS
+        from ornata.definitions.constants import VALUE_PATTERNS
+        from ornata.styling.colorkit.named_colors import NAMED_COLORS
 
         token = color_value.strip()
         if not token:
@@ -201,7 +202,6 @@ class StyleValidator:
         if token.isalpha():
             allowed_names = {
                 *{name.lower() for name in NAMED_COLORS},
-                *{name.lower() for name in NAMED_HEX},
                 "transparent",
             }
             return token.lower() in allowed_names

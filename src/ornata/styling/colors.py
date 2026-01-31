@@ -456,9 +456,9 @@ class Color:
         Returns:
             Mapping[str, str]: Mapping of named tokens to hex values.
         """
-        from ornata.definitions.constants import NAMED_HEX
+        from ornata.styling.colorkit.named_colors import NAMED_COLORS
 
-        return NAMED_HEX
+        return NAMED_COLORS
 
 def resolve_rgb(color_spec: ColorSpec | None) -> tuple[int, int, int] | None:
     """Resolve ``color_spec`` to an RGB tuple.

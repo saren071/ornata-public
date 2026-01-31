@@ -121,8 +121,6 @@ from ornata.definitions.constants import LAST_VDOM_WARNINGS as LAST_VDOM_WARNING
 from ornata.definitions.constants import LAYOUT_CACHE_LIMIT as LAYOUT_CACHE_LIMIT
 from ornata.definitions.constants import LF as LF
 from ornata.definitions.constants import MIN_PATCH_OPTIMIZATION as MIN_PATCH_OPTIMIZATION
-from ornata.definitions.constants import NAMED_COLORS as NAMED_COLORS
-from ornata.definitions.constants import NAMED_HEX as NAMED_HEX
 from ornata.definitions.constants import OSC as OSC
 from ornata.definitions.constants import PROPERTIES as PROPERTIES
 from ornata.definitions.constants import RECONCILER_LOCAL as RECONCILER_LOCAL
@@ -332,7 +330,6 @@ from ornata.definitions.dataclasses.rendering import SurfaceMetadata as SurfaceM
 from ornata.definitions.dataclasses.rendering import TerminalInfo as TerminalInfo
 from ornata.definitions.dataclasses.rendering import TerminalState as TerminalState
 from ornata.definitions.dataclasses.rendering import TextSurface as TextSurface
-from ornata.definitions.dataclasses.rendering import UnicodeCanvas as UnicodeCanvas
 from ornata.definitions.dataclasses.rendering import Win32WindowManager as Win32WindowManager
 from ornata.definitions.dataclasses.rendering import WindowPumpHandle as WindowPumpHandle
 from ornata.definitions.dataclasses.shared import AdapterContext as AdapterContext
@@ -759,8 +756,6 @@ __all__ = [
     "HSL_PATTERN",
     "HSLA_PATTERN",
     "RGB_COMMA_PATTERN",
-    "NAMED_COLORS",
-    "NAMED_HEX",
     "ANSI_4BIT_RGB",
     "BACKGROUND_COLORS",
     "EFFECTS",
@@ -1260,7 +1255,6 @@ __all__ = [
     "PatchPoolConfig",
     "PatchPoolStats",
     "PluginMetadata",
-    "UnicodeCanvas",
     "LengthUnit",
     "ColorSpec",
     "EasingFunction",

@@ -616,7 +616,10 @@ def compute_layout(node: LayoutNode, available_width: int | None = None, availab
     else:
         gap = style.gap
 
-    cursor_main = padding_left + main_offset
+    if is_row:
+        cursor_main = padding_left + main_offset
+    else:
+        cursor_main = padding_top + main_offset
     for child, size in zip(children_to_process, child_layouts, strict=True):
         child_layout = child.layout
         child_margin_top = child.style.margin_top if child.style.margin_top is not None else child.style.margin
@@ -626,14 +629,14 @@ def compute_layout(node: LayoutNode, available_width: int | None = None, availab
 
         if is_row:
             child_layout.x = cursor_main + child_margin_left
-            align_space = cross_available - size.height
+            align_space = max(0, cross_available - size.height)
             if style.align == "center":
                 child_layout.y = padding_top + child_margin_top + align_space // 2
             elif style.align == "end":
                 child_layout.y = padding_top + child_margin_top + align_space
             elif style.align == "stretch":
                 child_layout.y = padding_top + child_margin_top
-                child_layout.height = cross_available - child_margin_top - child_margin_bottom
+                child_layout.height = max(0, cross_available - child_margin_top - child_margin_bottom)
             else:
                 child_layout.y = padding_top + child_margin_top
             cursor_main += size.width + gap
@@ -671,16 +674,30 @@ def measure_leaf(node: LayoutNode, available_width: int | None, available_height
     margin_bottom = style.margin_bottom if style.margin_bottom is not None else style.margin
     margin_left = style.margin_left if style.margin_left is not None else style.margin
 
-    # Prefer explicit width/height from style when provided; otherwise fall back
-    width = style.width if style.width is not None else (style.flex_basis if style.flex_basis is not None else 0)
-    height = style.height if style.height is not None else 0
-    if node.measure is not None:
-        w, h = node.measure(available_width, available_height)
-        # Only use measured values when not explicitly specified by style
-        if style.width is None:
-            width = w
-        if style.height is None:
-            height = h
+    # Handle percentage widths by calculating relative to available space
+    def _resolve_size(style_value: int | None, available: int | None) -> int:
+        """Resolve a size value, handling percentage markers (10000 + pct)."""
+        if style_value is None:
+            return 0
+        # Detect percentage marker: values > 10000 are percentages (10000 + pct_value)
+        if style_value > 10000 and available is not None:
+            pct = style_value - 10000
+            return int(available * pct / 100)
+        return style_value
+
+    width = _resolve_size(style.width, available_width)
+    height = _resolve_size(style.height, available_height)
+
+    # Fallback to flex_basis or measured size if no explicit size
+    if width == 0 and style.flex_basis is not None:
+        width = int(style.flex_basis)
+    if width == 0 and node.measure is not None:
+        w, _ = node.measure(available_width, available_height)
+        width = w
+    if height == 0 and node.measure is not None:
+        _, h = node.measure(available_width, available_height)
+        height = h
+
     from ornata.layout.core.utils import clamp_int as _clamp
     width = _clamp(width, style.min_width, style.max_width)
     height = _clamp(height, style.min_height, style.max_height)

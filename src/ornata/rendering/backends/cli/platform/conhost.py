@@ -215,6 +215,15 @@ class ConHostAdapter:
 _conhost_adapter = ConHostAdapter()
 
 
+def get_terminal_size() -> tuple[int, int]:
+    """Get the current terminal size.
+
+    Returns:
+        Tuple of (width, height) in characters.
+    """
+    return _conhost_adapter._get_terminal_size()
+
+
 def get_conhost_adapter() -> ConHostAdapter:
     """Get the global ConHost adapter instance.
 

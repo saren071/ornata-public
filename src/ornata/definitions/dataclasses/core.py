@@ -32,6 +32,17 @@ class AppConfig:
         return self.backend
 
     def viewport_bounds(self) -> Bounds:
+        """Return viewport bounds appropriate for the backend.
+        
+        For CLI/TTY backends, dimensions are already in cell units (columns/rows)
+        as detected from the terminal. For GUI backends, returns pixel-based bounds.
+        """
+        # For CLI backends, dimensions are already in cells (from terminal detection)
+        if self.backend in (BackendTarget.CLI, BackendTarget.TTY):
+            # Use detected terminal size directly, with fallback to defaults if zero
+            cell_width = self.viewport_width if self.viewport_width > 0 else 80
+            cell_height = self.viewport_height if self.viewport_height > 0 else 24
+            return Bounds(x=0, y=0, width=cell_width, height=cell_height)
         return Bounds(x=0, y=0, width=self.viewport_width, height=self.viewport_height)
 
     def combined_capabilities(self) -> dict[str, object]:

@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 from ornata.api.exports.utils import get_logger
 from ornata.rendering.backends.cli.terminal import TerminalRenderer
+from ornata.styling.colorkit.resolver import ColorResolver
 
 if TYPE_CHECKING:
     from ornata.api.exports.definitions import BackendTarget, RenderOutput
@@ -25,6 +26,7 @@ class ANSIRenderer(TerminalRenderer):
         super().__init__(backend_target)
         self._render_lock = RLock()
         self._ansi_enabled = True
+        self._color_resolver = ColorResolver()
         logger.debug("Initialized ANSIRenderer")
 
     def render_tree(self, tree: Any, layout_result: Any) -> RenderOutput:
@@ -36,9 +38,12 @@ class ANSIRenderer(TerminalRenderer):
                 if not isinstance(output.content, str):
                     return output
                 content = output.content
-                # no-op styling hook; can be wired to Styling later
+                styled = self._apply_backend_style(tree, output)
+                if styled is not None:
+                    content = styled
                 if self._ansi_enabled:
                     content = self._wrap_reset(content)
+
                 return self._set_last_output(
                     RenderOutput(content=content, backend_target=output.backend_target, metadata=output.metadata)
                 )
@@ -50,6 +55,37 @@ class ANSIRenderer(TerminalRenderer):
     def _wrap_reset(self, content: str) -> str:
         """Wrap content with a reset code to prevent color bleed."""
         return f"{content}\x1b[0m" if content else content
+
+    def _apply_backend_style(self, tree: Any, output: RenderOutput) -> str | None:
+        """Apply backend-conditioned style (already converted) to rendered content when available."""
+
+        try:
+            root = getattr(tree, "root", tree)
+            backend_payload = None
+            if hasattr(root, "metadata"):
+                backend_payload = getattr(root, "metadata", {}).get("backend_style")
+            if backend_payload is None:
+                return None
+
+            style = getattr(backend_payload, "style", None)
+            if style is None:
+                return None
+
+            fg_seq = style.color if isinstance(style.color, str) else ""
+            bg_seq = style.background if isinstance(getattr(style, "background", None), str) else ""
+
+            # Fallback: resolve non-ANSI specs into ANSI sequences
+            if not fg_seq and getattr(style, "color", None) is not None:
+                fg_seq = self._color_resolver.resolve_ansi(style.color)
+            if not bg_seq and getattr(style, "background", None) is not None:
+                bg_seq = self._color_resolver.resolve_background(str(style.background))
+
+            if not fg_seq and not bg_seq:
+                return None
+
+            return f"{bg_seq}{fg_seq}{output.content}"
+        except Exception:
+            return None
 
     def apply_vdom_patches(self, patches: list[Any]) -> None:
         """Apply VDOM patches to the CLI renderer.

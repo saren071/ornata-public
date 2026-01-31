@@ -23,7 +23,7 @@ class PaletteLibrary:
         Returns:
             str: ANSI escape sequence or an empty string when the token is unknown.
         """
-        from ornata.definitions.constants import NAMED_COLORS
+        from ornata.styling.colorkit.named_colors import NAMED_COLORS
 
         return NAMED_COLORS.get(name.lower(), "")
 
@@ -37,9 +37,9 @@ class PaletteLibrary:
         Returns:
             str | None: Hex value when available.
         """
-        from ornata.definitions.constants import NAMED_HEX
+        from ornata.styling.colorkit.named_colors import NAMED_COLORS
 
-        return NAMED_HEX.get(name.lower())
+        return NAMED_COLORS.get(name.lower())
 
     @classmethod
     def get_background_color(cls, name: str) -> str:
@@ -77,16 +77,26 @@ class PaletteLibrary:
         """Register a new named colour entry.
 
         Args:
-            entry (PaletteEntry): Entry describing ANSI, background, and hex values.
+            entry (PaletteEntry): Entry describing the color literal.
 
         Returns:
             None
         """
-        from ornata.definitions.constants import NAMED_COLORS, NAMED_HEX
+        from ornata.styling.colorkit.named_colors import NAMED_COLORS
 
         token = entry.token.lower()
-        NAMED_COLORS[token] = entry.ansi
-        NAMED_HEX[token] = entry.hex_value
+        # Convert ColorLiteral to hex for storage
+        if entry.literal.kind == "hex":
+            hex_value = entry.literal.value if isinstance(entry.literal.value, str) else ""
+            NAMED_COLORS[token] = hex_value
+        elif entry.cached_rgb:
+            r, g, b = entry.cached_rgb
+            NAMED_COLORS[token] = f"#{r:02x}{g:02x}{b:02x}"
+        else:
+            rgb = entry.literal.to_rgb()
+            if rgb:
+                r, g, b = rgb
+                NAMED_COLORS[token] = f"#{r:02x}{g:02x}{b:02x}"
 
 
 __all__ = ["PaletteLibrary"]

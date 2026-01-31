@@ -46,7 +46,7 @@ class DirectXBackend(GPUBackend):
         self._context: DirectXContext | None = None
         self._shader_compiler: DirectXShaderCompiler | None = None
         # name -> dict of stage objects (and blobs under underscored keys to keep them alive)
-        self._shaders: dict[str, dict[str, Any]] = {}
+        self._shaders: dict[str, Shader] = {}
         # cached constant buffer for a simple camera (float4x4)
         self._vs_cbuffer: Any | None = None
         # Viewport dimensions for dynamic sizing

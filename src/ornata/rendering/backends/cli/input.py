@@ -21,6 +21,50 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
+def _map_mouse_button(button_code: int, released: bool) -> str:
+    """Map SGR mouse button code to a semantic token.
+
+    Parameters
+    ----------
+    button_code : int
+        Value encoded in the first field of the SGR mouse sequence.
+    released : bool
+        Whether the sequence ends with ``m`` (release) instead of ``M`` (press).
+
+    Returns
+    -------
+    str
+        Semantic mouse token.
+    """
+
+    wheel_bit = 64
+    motion_bit = 32
+    base = button_code & 0b11
+    is_motion = (button_code & motion_bit) == motion_bit
+    is_wheel = (button_code & wheel_bit) == wheel_bit
+
+    if is_wheel:
+        # Wheel events encode direction in lower bits
+        if base == 0:
+            return "mouse_scroll_up"
+        if base == 1:
+            return "mouse_scroll_down"
+        return "mouse_scroll"
+
+    if is_motion:
+        return "mouse_move"
+
+    button_map = {
+        0: "mouse_left",
+        1: "mouse_middle",
+        2: "mouse_right",
+    }
+    token = button_map.get(base, "mouse_unknown")
+    if released:
+        return f"{token}_release"
+    return token
+
+
 class CLIInputPipeline:
     """Manages keyboard input and converts it to events for the subsystem."""
 
@@ -184,8 +228,47 @@ class CLIInputPipeline:
                     logger.debug("cli_input: normalized enter key")
                     return "enter"
                 if ch == "\x1b":
-                    logger.debug("cli_input: escape key")
-                    return "escape"
+                    # Check for mouse sequence: ESC[<...M or ESC[<...m (SGR 1006 mouse reporting)
+                    try:
+                        if msvcrt.kbhit():
+                            next_ch = msvcrt.getwch()
+                            if next_ch == "[":
+                                # Potential mouse or extended sequence, read more
+                                seq = ""
+                                # Read with timeout to avoid blocking
+                                import time
+                                start_time = time.perf_counter()
+                                while msvcrt.kbhit() and (time.perf_counter() - start_time) < 0.01:
+                                    seq_ch = msvcrt.getwch()
+                                    seq += seq_ch
+                                    if seq_ch in ("M", "m"):
+                                        break
+                                # Check if it's a mouse sequence: starts with < and ends with M/m
+                                if seq.startswith("<") and seq.endswith(("M", "m")):
+                                    logger.debug("cli_input: mouse event sequence %r", seq)
+                                    # SGR 1006 format: <Cb;Cx;CyM (press) or <Cb;Cx;Cym (release)
+                                    try:
+                                        parts = seq[1:-1].split(";")
+                                        button_code = int(parts[0]) if parts else -1
+                                        released = seq.endswith("m")
+                                        token = _map_mouse_button(button_code, released)
+                                        return token
+                                    except Exception:
+                                        return "mouse_unknown"
+                                # Not a mouse sequence - return escape (we've consumed the sequence)
+                                logger.debug("cli_input: escape sequence %r", seq)
+                                return "escape"
+                            else:
+                                # ESC followed by something other than [
+                                logger.debug("cli_input: escape key (followed by %r)", next_ch)
+                                return "escape"
+                        else:
+                            # Just ESC with no following characters
+                            logger.debug("cli_input: escape key")
+                            return "escape"
+                    except Exception as exc:
+                        logger.debug("cli_input: escape key (exception: %s)", exc)
+                        return "escape"
                 if ch == "\x00" or ch == "\xe0":
                     code = msvcrt.getwch()
                     logger.debug("cli_input: extended key prefix %r", code)

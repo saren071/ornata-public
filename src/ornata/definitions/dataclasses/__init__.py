@@ -143,7 +143,6 @@ from .rendering import (
     TerminalInfo,
     TerminalState,
     TextSurface,
-    UnicodeCanvas,
     Win32WindowManager,
     WindowPumpHandle,
 )
@@ -316,7 +315,6 @@ __all__ = [
     "InputContext",
     "Win32WindowManager",
     "WindowPumpHandle",
-    "UnicodeCanvas",
     "TerminalState",
     "RenderOutput",
     "RendererCapabilities",

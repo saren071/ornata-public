@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from collections import OrderedDict
 from threading import RLock
 from typing import TYPE_CHECKING, Any, TypeVar
@@ -10,7 +9,13 @@ from typing import TYPE_CHECKING, Any, TypeVar
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from ornata.definitions.dataclasses.styling import HSLA, RGBA, ColorBlend, ColorFunction
+    from ornata.definitions.dataclasses.styling import (
+        HSLA,
+        RGBA,
+        ColorBlend,
+        ColorFunction,
+        ColorLiteral,
+    )
 
 _T = TypeVar("_T")
 
@@ -77,15 +82,27 @@ class ColorResolver:
         self._rgb_cache: BoundedCache[tuple[int, int, int]] = BoundedCache(RGB_CACHE_LIMIT)
         self._gradient_cache: BoundedCache[str] = BoundedCache(GRADIENT_CACHE_LIMIT)
 
-    def resolve_ansi(self, spec: str | RGBA | HSLA | ColorFunction | ColorBlend | None) -> str:
+    def resolve_ansi(
+        self,
+        spec: str | RGBA | HSLA | ColorFunction | ColorBlend | ColorLiteral | None,
+    ) -> str:
         """Resolve ``spec`` to a foreground ANSI sequence."""
-        from ornata.definitions.dataclasses.styling import HSLA, RGBA, ColorBlend, ColorFunction
+        from ornata.definitions.dataclasses.styling import (
+            HSLA,
+            RGBA,
+            ColorBlend,
+            ColorFunction,
+            ColorLiteral,
+        )
         from ornata.styling.colorkit.ansi import AnsiConverter
         from ornata.styling.colorkit.spaces import ColorSpaces
 
         self._ensure_theme_cache_current()
         if spec is None:
             return ""
+
+        if isinstance(spec, ColorLiteral):
+            return self._color_literal_to_ansi(spec)
 
         if isinstance(spec, RGBA):
             rgb = (spec.r, spec.g, spec.b)
@@ -127,14 +144,26 @@ class ColorResolver:
         self._background_cache.put(key, resolved)
         return resolved
 
-    def resolve_rgb(self, spec: str | RGBA | HSLA | ColorFunction | ColorBlend | None) -> tuple[int, int, int] | None:
+    def resolve_rgb(
+        self,
+        spec: str | RGBA | HSLA | ColorFunction | ColorBlend | ColorLiteral | None,
+    ) -> tuple[int, int, int] | None:
         """Resolve ``spec`` to an RGB tuple."""
-        from ornata.definitions.dataclasses.styling import HSLA, RGBA, ColorBlend, ColorFunction
+        from ornata.definitions.dataclasses.styling import (
+            HSLA,
+            RGBA,
+            ColorBlend,
+            ColorFunction,
+            ColorLiteral,
+        )
         from ornata.styling.colorkit.spaces import ColorSpaces
 
         self._ensure_theme_cache_current()
         if spec is None:
             return None
+
+        if isinstance(spec, ColorLiteral):
+            return spec.to_rgb()
 
         if isinstance(spec, RGBA):
             return (spec.r, spec.g, spec.b)
@@ -184,8 +213,9 @@ class ColorResolver:
 
     def _resolve_string_spec(self, spec: str) -> str:
         """Resolve bare string specifications with fast-path dispatch."""
-        from ornata.definitions.constants import EFFECTS, NAMED_COLORS
+        from ornata.definitions.constants import EFFECTS
         from ornata.styling.colorkit.ansi import AnsiConverter
+        from ornata.styling.colorkit.named_colors import NAMED_COLORS
         from ornata.styling.colorkit.palette import PaletteLibrary
         if not spec:
             return ""
@@ -200,8 +230,9 @@ class ColorResolver:
             return self.resolve_ansi(resolved) if resolved else ""
 
         # Named shortcuts
-        if spec in NAMED_COLORS:
-            return PaletteLibrary.get_named_color(spec)
+        spec_lower = spec.lower()
+        if spec_lower in NAMED_COLORS:
+            return AnsiConverter.hex_to_ansi(NAMED_COLORS[spec_lower])
         if spec in EFFECTS:
             return PaletteLibrary.get_effect(spec)
 
@@ -271,13 +302,13 @@ class ColorResolver:
 
     def _resolve_rgb_from_string(self, spec: str) -> tuple[int, int, int] | None:
         """Resolve RGB tuple from a string specification with minimal regex."""
-        from ornata.definitions.constants import NAMED_COLORS, NAMED_HEX
         from ornata.styling.colorkit.ansi import AnsiConverter
-        from ornata.styling.colorkit.palette import PaletteLibrary
-        # named hex map
-        if spec in NAMED_HEX:
-            hex_value = PaletteLibrary.get_named_hex(spec)
-            return AnsiConverter.hex_to_rgb(hex_value) if hex_value else None
+        from ornata.styling.colorkit.named_colors import NAMED_COLORS
+        # named color lookup
+        spec_lower = spec.lower()
+        if spec_lower in NAMED_COLORS:
+            hex_value = NAMED_COLORS[spec_lower]
+            return AnsiConverter.hex_to_rgb(hex_value)
 
         c0 = spec[0]
         if c0 == "#":
@@ -296,20 +327,186 @@ class ColorResolver:
             if spec.startswith("hsla(") and spec.endswith(")"):
                 return self._hsla_string_to_rgb(spec)
 
-        if spec in NAMED_COLORS:
-            from ornata.definitions.constants import ANSI_4BIT_RGB
-            # Best-effort 4-bit ANSI to approximate RGB
-            ansi_code = PaletteLibrary.get_named_color(spec)
-            m = re.search(r"\[(\d+)m", ansi_code)
-            if m:
-                rgb = ANSI_4BIT_RGB.get(m.group(1))
-                if rgb:
-                    return rgb
+        if spec_lower in NAMED_COLORS:
+            # Resolve named color to RGB
+            hex_value = NAMED_COLORS[spec_lower]
+            return AnsiConverter.hex_to_rgb(hex_value)
 
         resolved = self._theme_lookup(spec)
         if resolved:
             return self.resolve_rgb(resolved)
         return None
+
+    def _color_literal_to_ansi(self, literal: ColorLiteral) -> str:
+        """Convert a ColorLiteral to an ANSI escape sequence.
+
+        Args:
+            literal: The color literal to convert.
+
+        Returns:
+            ANSI escape sequence string.
+        """
+        from ornata.styling.colorkit.ansi import AnsiConverter
+
+        rgb = literal.to_rgb()
+        if rgb:
+            return AnsiConverter.rgb_to_ansi(rgb)
+        return ""
+
+    def to_cli(self, literal: ColorLiteral) -> str:
+        """Convert a ColorLiteral to CLI/terminal ANSI format.
+
+        Args:
+            literal: The color literal to convert.
+
+        Returns:
+            ANSI escape sequence for terminal output.
+        """
+        return self._color_literal_to_ansi(literal)
+
+    def to_gui(self, literal: ColorLiteral) -> str | tuple[int, int, int] | None:
+        """Convert a ColorLiteral to GUI-ready format.
+
+        For GUI backends, we preserve the original color data.
+        Returns hex string or RGB tuple that GUI renderers can use directly.
+
+        Args:
+            literal: The color literal to convert.
+
+        Returns:
+            Hex string, RGB tuple, or None if conversion fails.
+        """
+        if literal.kind == "hex":
+            return literal.value if isinstance(literal.value, str) else None
+        return literal.to_rgb()
+
+    def resolve_literal(self, spec: str, palette: dict[str, ColorLiteral] | None = None) -> ColorLiteral | None:
+        """Resolve a color specification to a ColorLiteral.
+
+        This method parses color strings (hex, rgb, named colors, refs)
+        and returns a renderer-agnostic ColorLiteral.
+
+        Args:
+            spec: Color specification string (e.g., "#ff0000", "rgb(255,0,0)", "red", "var(primary)")
+            palette: Optional palette dictionary for resolving refs.
+
+        Returns:
+            ColorLiteral or None if the spec cannot be resolved.
+        """
+        from ornata.definitions.dataclasses.styling import ColorLiteral
+        from ornata.styling.colorkit.named_colors import NAMED_COLORS
+
+        if not spec:
+            return None
+
+        spec = spec.strip()
+
+        # Handle var(...) references
+        if spec.startswith("var(") and spec.endswith(")"):
+            token = spec[4:-1].strip()
+            if palette and token in palette:
+                return palette[token]
+            theme_resolved = self._theme_lookup(token)
+            if theme_resolved:
+                return self.resolve_literal(theme_resolved, palette)
+            return None
+
+        # Handle $token references
+        if spec.startswith("$"):
+            token = spec[1:]
+            if palette and token in palette:
+                return palette[token]
+            theme_resolved = self._theme_lookup(token)
+            if theme_resolved:
+                return self.resolve_literal(theme_resolved, palette)
+            return None
+
+        # Hex colors
+        if spec.startswith("#"):
+            return ColorLiteral(kind="hex", value=spec)
+
+        # rgb(...) and rgba(...)
+        if spec.startswith("rgb(") and spec.endswith(")"):
+            rgb_tuple = self._parse_rgb_tuple(spec[4:-1])
+            if rgb_tuple:
+                return ColorLiteral(kind="rgb", value=rgb_tuple)
+        if spec.startswith("rgba(") and spec.endswith(")"):
+            rgba_tuple = self._parse_rgba_tuple(spec[5:-1])
+            if rgba_tuple:
+                return ColorLiteral(kind="rgba", value=rgba_tuple)
+
+        # hsl(...) and hsla(...)
+        if spec.startswith("hsl(") and spec.endswith(")"):
+            hsl_tuple = self._parse_hsl_tuple(spec[4:-1])
+            if hsl_tuple:
+                return ColorLiteral(kind="hsl", value=hsl_tuple)
+        if spec.startswith("hsla(") and spec.endswith(")"):
+            hsla_tuple = self._parse_hsla_tuple(spec[5:-1])
+            if hsla_tuple:
+                return ColorLiteral(kind="hsla", value=hsla_tuple)
+
+        # Named colors from CSS palette
+        spec_lower = spec.lower()
+        if spec_lower in NAMED_COLORS:
+            return ColorLiteral(kind="named", value=NAMED_COLORS[spec_lower])
+
+        # Palette lookup
+        if palette and spec_lower in palette:
+            return palette[spec_lower]
+
+        # Theme lookup
+        theme_resolved = self._theme_lookup(spec)
+        if theme_resolved:
+            return self.resolve_literal(theme_resolved, palette)
+
+        return None
+
+    def _parse_rgb_tuple(self, inner: str) -> tuple[int, int, int] | None:
+        """Parse RGB values from inside rgb() parentheses."""
+        parts = [p.strip() for p in inner.split(",")]
+        if len(parts) != 3:
+            return None
+        try:
+            return (int(parts[0]), int(parts[1]), int(parts[2]))
+        except ValueError:
+            return None
+
+    def _parse_rgba_tuple(self, inner: str) -> tuple[int, int, int, float] | None:
+        """Parse RGBA values from inside rgba() parentheses."""
+        parts = [p.strip() for p in inner.split(",")]
+        if len(parts) != 4:
+            return None
+        try:
+            return (int(parts[0]), int(parts[1]), int(parts[2]), float(parts[3]))
+        except ValueError:
+            return None
+
+    def _parse_hsl_tuple(self, inner: str) -> tuple[float, float, float] | None:
+        """Parse HSL values from inside hsl() parentheses."""
+        parts = [p.strip() for p in inner.split(",")]
+        if len(parts) != 3:
+            return None
+        try:
+            h = float(parts[0])
+            s = float(parts[1].rstrip("%")) / 100.0 if parts[1].endswith("%") else float(parts[1])
+            lightness_val = float(parts[2].rstrip("%")) / 100.0 if parts[2].endswith("%") else float(parts[2])
+            return (h, s, lightness_val)
+        except ValueError:
+            return None
+
+    def _parse_hsla_tuple(self, inner: str) -> tuple[float, float, float, float] | None:
+        """Parse HSLA values from inside hsla() parentheses."""
+        parts = [p.strip() for p in inner.split(",")]
+        if len(parts) != 4:
+            return None
+        try:
+            h = float(parts[0])
+            s = float(parts[1].rstrip("%")) / 100.0 if parts[1].endswith("%") else float(parts[1])
+            lightness_val = float(parts[2].rstrip("%")) / 100.0 if parts[2].endswith("%") else float(parts[2])
+            a = float(parts[3])
+            return (h, s, lightness_val, a)
+        except ValueError:
+            return None
 
     def _hsl_string_to_rgb(self, spec: str) -> tuple[int, int, int] | None:
         """Convert an ``hsl()`` string to RGB."""
@@ -325,7 +522,10 @@ class ColorResolver:
             lightness = float(parts[2].rstrip("%")) / 100.0 if parts[2].endswith("%") else float(parts[2])
         except ValueError:
             return None
-        return ColorSpaces.hsl_to_rgb((hue, saturation, lightness))
+        rgb = ColorSpaces.hsl_to_rgb((hue, saturation, lightness))
+        if rgb:
+            return (int(rgb[0]), int(rgb[1]), int(rgb[2]))
+        return None
 
     def _hsla_string_to_rgb(self, spec: str) -> tuple[int, int, int] | None:
         """Convert an ``hsla()`` string to RGB ignoring the alpha channel."""
@@ -341,7 +541,10 @@ class ColorResolver:
             lightness = float(parts[2].rstrip("%")) / 100.0 if parts[2].endswith("%") else float(parts[2])
         except ValueError:
             return None
-        return ColorSpaces.hsl_to_rgb((hue, saturation, lightness))
+        rgb = ColorSpaces.hsl_to_rgb((hue, saturation, lightness))
+        if rgb:
+            return (int(rgb[0]), int(rgb[1]), int(rgb[2]))
+        return None
 
     def _resolve_function(self, function: ColorFunction) -> str:
         """Resolve functional colour constructs."""

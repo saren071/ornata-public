@@ -7,6 +7,7 @@ from .conhost import (
     ConHostAdapter,
     detect_conhost_capabilities,
     get_conhost_adapter,
+    get_terminal_size,
     is_conhost_available,
 )
 from .detector import (
@@ -22,5 +23,6 @@ __all__ = [
     "detector",
     "get_conhost_adapter",
     "get_terminal_adapter",
+    "get_terminal_size",
     "is_conhost_available",
 ]

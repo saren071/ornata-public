@@ -6,11 +6,14 @@ import threading
 from typing import TYPE_CHECKING, Any
 
 from ornata.api.exports.utils import get_logger
+from ornata.definitions.enums import BackendTarget
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
     from ornata.api.exports.definitions import CacheKey, ColorBlend, ColorSpec, FontDef, Insets, Length, ResolvedStyle, StylingContext
+    from ornata.definitions.dataclasses.layout import LayoutStyle
+    from ornata.definitions.dataclasses.styling import BackendStylePayload
     from ornata.styling.language.engine import StyleEngine
 
 class _ResolutionCounter:
@@ -79,6 +82,160 @@ class StylingRuntime:
 
         self._cache[key] = resolved
         return resolved
+
+    def resolve_backend_style(self, context: StylingContext) -> BackendStylePayload:
+        """Resolve a style and produce backend-conditioned payload.
+
+        Args:
+            context (StylingContext): Styling context with backend target.
+
+        Returns:
+            BackendStylePayload: Backend-conditioned styling bundle.
+        """
+        from ornata.definitions.dataclasses.styling import BackendStylePayload
+
+        backend = context.backend
+        resolved = self.resolve_style(context)
+
+        # Filter/convert style based on backend capabilities
+        filtered_style = self._filter_style_for_backend(resolved, backend)
+
+        # Build renderer-specific metadata
+        renderer_metadata = self._build_renderer_metadata(filtered_style, backend, context.caps)
+
+        # Build layout style from filtered style
+        layout_style = self._build_layout_style(filtered_style, backend)
+
+        return BackendStylePayload(
+            backend=backend,
+            style=filtered_style,
+            renderer_metadata=renderer_metadata,
+            layout_style=layout_style,
+            extras={},
+        )
+
+    def _filter_style_for_backend(self, style: ResolvedStyle, backend: BackendTarget) -> ResolvedStyle:
+        """Filter and convert style fields based on backend capabilities.
+
+        Args:
+            style (ResolvedStyle): Original resolved style.
+            backend (BackendTarget): Target backend.
+
+        Returns:
+            ResolvedStyle: Backend-filtered style.
+        """
+        from copy import copy
+
+        filtered = copy(style)
+
+        if backend in (BackendTarget.CLI, BackendTarget.TTY):
+            # CLI backends need cell-based units, not px
+            filtered = self._convert_lengths_to_cells(filtered)
+
+            # Convert colors to ANSI strings for CLI/TTY backends
+            try:
+                from ornata.styling.colorkit.resolver import ColorResolver
+
+                resolver = ColorResolver(
+                    theme_lookup=self._theme_manager.resolve_token,
+                    theme_version_provider=lambda: self._theme_manager.version,
+                )
+                if filtered.color is not None:
+                    filtered.color = resolver.resolve_ansi(filtered.color)
+                if getattr(filtered, "background", None) is not None:
+                    bg_spec = filtered.background
+                    filtered.background = (
+                        resolver.resolve_background(bg_spec)
+                        if isinstance(bg_spec, str)
+                        else resolver.resolve_ansi(bg_spec)
+                    )
+            except Exception:
+                pass
+
+        return filtered
+
+    def _convert_lengths_to_cells(self, style: ResolvedStyle) -> ResolvedStyle:
+        """Convert px-based lengths to cell-based for CLI backends.
+
+        Args:
+            style (ResolvedStyle): Style with px lengths.
+
+        Returns:
+            ResolvedStyle: Style with cell-based lengths.
+        """
+        from copy import copy
+
+        converted = copy(style)
+        cell_fields = ["width", "height", "min_width", "min_height", "max_width", "max_height",
+                       "top", "right", "bottom", "left", "font_size", "letter_spacing", "word_spacing"]
+
+        for field_name in cell_fields:
+            value = getattr(style, field_name)
+            if value is not None and hasattr(value, "unit") and value.unit == "px":
+                # Approximate px to cells (assuming 10px per cell width, 16px per cell height)
+                cell_value = value.value / 10.0  # Simplified conversion
+                setattr(converted, field_name, type(value)(cell_value, "cell"))
+
+        return converted
+
+    def _build_renderer_metadata(self, style: ResolvedStyle, backend: BackendTarget, caps: Any | None) -> dict[str, Any]:
+        """Build renderer-specific metadata bundle.
+
+        Args:
+            style (ResolvedStyle): Filtered style.
+            backend (BackendTarget): Target backend.
+            caps (Any | None): Capability descriptor.
+
+        Returns:
+            dict[str, Any]: Renderer metadata.
+        """
+        metadata: dict[str, Any] = {
+            "backend": backend.value,
+        }
+
+        # Add border thickness flag for CLI
+        if backend in (BackendTarget.CLI, BackendTarget.TTY) and style.border:
+            border_width = style.border.width if style.border else 0
+            metadata["border_thick"] = border_width >= 2
+
+        # Add color metadata based on backend color depth
+        if caps:
+            color_depth = getattr(caps, "color_depth", "C256") if not callable(getattr(caps, "color_depth", None)) else caps.color_depth()
+            metadata["color_depth"] = color_depth
+
+        return metadata
+
+    def _build_layout_style(self, style: ResolvedStyle, backend: BackendTarget) -> LayoutStyle:
+        """Build LayoutStyle from filtered ResolvedStyle.
+
+        Args:
+            style (ResolvedStyle): Filtered resolved style.
+            backend (BackendTarget): Target backend.
+
+        Returns:
+            LayoutStyle: Layout-ready style.
+        """
+        from ornata.definitions.dataclasses.layout import LayoutStyle
+
+        layout = LayoutStyle()
+
+        # Copy layout-relevant fields
+        layout_fields = [
+            "width", "height", "min_width", "min_height", "max_width", "max_height",
+            "padding", "margin", "display", "position",
+            "flex_direction", "justify", "align",
+            "flex_grow", "flex_shrink", "flex_basis", "wrap",
+        ]
+
+        for field_name in layout_fields:
+            if hasattr(style, field_name):
+                value = getattr(style, field_name)
+                setattr(layout, field_name, value)
+                # Sync direction when flex_direction is set
+                if field_name == "flex_direction" and value is not None:
+                    layout.direction = value
+
+        return layout
 
     def invalidate_cache(self, component_name: str | None = None) -> None:
         """Invalidate cached styles.
@@ -367,8 +524,42 @@ def _safe_call(obj: Any, attribute: str) -> str:
         return "?"
 
 
+def resolve_backend_component_style(
+    component_name: str,
+    *,
+    state: Mapping[str, bool] | None = None,
+    theme_overrides: Mapping[str, str] | None = None,
+    caps: Any | None = None,
+    backend: BackendTarget = BackendTarget.GUI,
+) -> BackendStylePayload:
+    """Resolve a component style for a specific backend using the global subsystem.
+
+    Args:
+        component_name (str): Component identifier.
+        state (Mapping[str, bool] | None): Optional state flags.
+        theme_overrides (Mapping[str, str] | None): Theme overrides applied during resolution.
+        caps (Any | None): Optional capability descriptor.
+        backend (BackendTarget): Target backend (default: GUI).
+
+    Returns:
+        BackendStylePayload: Backend-conditioned styling bundle.
+    """
+    from ornata.api.exports.definitions import StylingContext
+
+    subsystem = get_styling_runtime()
+    context = StylingContext(
+        component_name=component_name,
+        state=state,
+        theme_overrides=theme_overrides,
+        caps=caps,
+        backend=backend,
+    )
+    return subsystem.resolve_backend_style(context)
+
+
 __all__ = [
     "StylingRuntime",
     "resolve_component_style",
+    "resolve_backend_component_style",
     "get_styling_runtime",
 ]

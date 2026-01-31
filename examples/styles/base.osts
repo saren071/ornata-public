@@ -1,26 +1,59 @@
 mission-control-root {
-    background: #0d1117;
-    color: #e6edf3;
+    background: #1a0746ff;
+    color: #f6e7d7;
+    width: 100%;
+    height: 100%;
+    padding: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1;
 }
 
 mission-header {
     font-size: 26px;
     font-weight: 600;
     text-transform: uppercase;
-    color: #58a6ff;
+    color: #810707ff;
+    padding: 1;
+    margin-bottom: 1;
 }
 
 telemetry-table {
-    border: 1px solid #30363d;
+    border: 1px solid #232b35ff;
     font-size: 14px;
+    width: 100%;
+    min-height: 6;
+    padding: 1;
+    background: #1c1d00ff;
+    color: #ff3f3fff;
 }
 
 action-bar {
+    display: flex;
     gap: 2;
+    width: 100%;
+    height: 3;
+    align-items: center;
+    background: #24130f;
+    padding: 1;
+}
+
+command-entry {
+    display: block;
+    width: 100%;
+    min-height: 1;
+    padding: 1;
+    background: #0b1224;
+    color: #94e22dff;
+    border: 1px solid #30363d;
+    border-radius: 2px;
 }
 
 launch-button {
     background: linear-gradient(#238636, #196126);
-    color: #ffffff;
+    color: #eea621ff;
     border-radius: 4px;
+    padding: 1 2;
+    min-height: 1;
+    min-width: 12;
 }

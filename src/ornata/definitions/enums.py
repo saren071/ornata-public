@@ -341,6 +341,7 @@ class EventType(Enum):
     COMPONENT_UPDATE = "component_update"
     COMPONENT_FOCUS = "component_focus"
     COMPONENT_BLUR = "component_blur"
+    COMPONENT_EVENT = "component_event"
     TICK = "tick"
     RENDER_FRAME = "render_frame"
     LAYOUT_INVALIDATED = "layout_invalidated"

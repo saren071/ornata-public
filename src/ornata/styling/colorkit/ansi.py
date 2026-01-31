@@ -46,7 +46,7 @@ class AnsiConverter:
 
     @staticmethod
     def hex_to_rgb(hex_color: str) -> tuple[int, int, int] | None:
-        """Convert a #RRGGBB string to an RGB tuple."""
+        """Convert a #RRGGBB or #RRGGBBAA string to an RGB tuple."""
         fast = AnsiConverter._fast_hex_to_rgb
         if fast:
             parsed = fast(hex_color)
@@ -59,6 +59,9 @@ class AnsiConverter:
         s = hex_color.strip()
         if s.startswith("#"):
             s = s[1:]
+        # Accept 6-digit (RRGGBB) or 8-digit (RRGGBBAA) hex, ignore alpha if present
+        if len(s) == 8:
+            s = s[:6]  # Strip alpha channel
         if len(s) != 6:
             return None
         try:

@@ -5,19 +5,21 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ornata.definitions.dataclasses.core import AppConfig, RuntimeFrame
+from ornata.definitions.dataclasses.layout import LayoutResult
 from ornata.definitions.dataclasses.rendering import GuiNode
-from ornata.definitions.dataclasses.styling import Insets, ResolvedStyle, StylingContext
+from ornata.definitions.dataclasses.styling import BackendStylePayload, Insets, ResolvedStyle, StylingContext
 from ornata.definitions.dataclasses.vdom import VDOMTree
+from ornata.definitions.enums import BackendTarget
 from ornata.layout.engine.engine import LayoutEngine, LayoutNode, compute_layout
 from ornata.styling.runtime import StylingRuntime
 from ornata.utils import get_logger
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
+    from typing import Any
 
     from ornata.definitions.dataclasses.components import Component
     from ornata.definitions.dataclasses.layout import LayoutStyle
-    from ornata.definitions.dataclasses.styling import ResolvedStyle
 
 
 class OrnataRuntime:
@@ -35,6 +37,7 @@ class OrnataRuntime:
         self._vdom_tree = VDOMTree(backend_target=self._backend_target)
         self._layout_tree: LayoutNode | None = None
         self._last_gui_tree: GuiNode | None = None
+        self._backend_payloads: dict[int, BackendStylePayload] = {}
         for stylesheet in config.stylesheets:
             self.load_stylesheet(stylesheet)
 
@@ -63,6 +66,13 @@ class OrnataRuntime:
         layout_result = self._layout_engine.calculate_layout(root_component, bounds, self._backend_target)
         try:
             compute_layout(layout_tree, int(bounds.width), int(bounds.height))
+            # Use LayoutNode tree dimensions which are correct for cell-based layouts
+            layout_result = LayoutResult(
+                x=0,
+                y=0,
+                width=int(layout_tree.layout.width) if layout_tree.layout else int(bounds.width),
+                height=int(layout_tree.layout.height) if layout_tree.layout else int(bounds.height),
+            )
         except Exception as exc:
             self._logger.debug("Legacy layout propagation failed: %s", exc)
         gui_tree = self._build_gui_tree(root_component, binding_map, styles)
@@ -105,27 +115,41 @@ class OrnataRuntime:
         """Apply resolved OSTS properties to the layout style.
 
         Args:
-            layout_style (LayoutStyle): The target layout style to mutate.
-            resolved (ResolvedStyle): The source resolved style.
+            layout_style: The target layout style to mutate.
+            resolved: The source resolved style (already backend-converted).
 
         Returns:
             None
         """
-        # DEBUG PRINT
-        self._logger.debug(f"Applying style to node. Width={resolved.width}, Height={resolved.height}")
+        def _length_value(length: Any | None) -> int | None:
+            """Extract numeric value from Length, handling both px and cell units.
+            
+            For percentage values, returns a marker value (10000 + value) so the
+            layout engine can detect and calculate them relative to available space.
+            """
+            if length is None:
+                return None
+            if hasattr(length, "value"):
+                val = length.value
+                unit = getattr(length, "unit", "px")
+                # Mark percentage values with a high offset so layout engine can detect them
+                if unit == "%":
+                    return int(10000 + val)  # Marker: 10000 + percentage
+                return int(val)
+            return int(length) if isinstance(length, (int, float)) else None
 
         if resolved.width is not None:
-            layout_style.width = int(resolved.width.value)
+            layout_style.width = _length_value(resolved.width)
         if resolved.height is not None:
-            layout_style.height = int(resolved.height.value)
+            layout_style.height = _length_value(resolved.height)
         if resolved.min_width is not None:
-            layout_style.min_width = int(resolved.min_width.value)
+            layout_style.min_width = _length_value(resolved.min_width)
         if resolved.min_height is not None:
-            layout_style.min_height = int(resolved.min_height.value)
+            layout_style.min_height = _length_value(resolved.min_height)
         if resolved.max_width is not None:
-            layout_style.max_width = int(resolved.max_width.value)
+            layout_style.max_width = _length_value(resolved.max_width)
         if resolved.max_height is not None:
-            layout_style.max_height = int(resolved.max_height.value)
+            layout_style.max_height = _length_value(resolved.max_height)
 
         if resolved.display:
             layout_style.display = resolved.display
@@ -180,23 +204,36 @@ class OrnataRuntime:
         self._logger.debug(f"Found {len(components)} components")
 
         caps = self._config.combined_capabilities()
-        contexts = [
-            StylingContext(
+        backend = BackendTarget(self._backend_target.value)
+
+        # Use backend-aware style resolution
+        payloads: dict[int, BackendStylePayload] = {}
+        for component in components:
+            context = StylingContext(
                 component_name=component.component_name or type(component).__name__,
                 state=component.states,
                 theme_overrides=None,
                 caps=caps,
+                backend=backend,
             )
-            for component in components
-        ]
+            payload = self._styling.resolve_backend_style(context)
+            if payload:
+                payloads[id(component)] = payload
 
-        self._logger.debug(f"Resolving styles for contexts: {[c.component_name for c in contexts]}")
-        resolved = self._styling.resolve_styles_parallel(contexts)
-        self._logger.debug(f"Resolved {len(resolved)} styles")
+        self._logger.debug(f"Resolved {len(payloads)} backend styles")
 
+        # Extract ResolvedStyle from payloads for compatibility
         style_map: dict[int, ResolvedStyle] = {}
-        for component, style in zip(components, resolved, strict=False):
-            style_map[id(component)] = style
+        for component in components:
+            payload = payloads.get(id(component))
+            if payload:
+                style_map[id(component)] = payload.style
+                payloads[id(component)] = payload
+            else:
+                # Fallback to empty style
+                style_map[id(component)] = ResolvedStyle()
+
+        self._backend_payloads = payloads
         return style_map
 
     def _build_gui_tree(
@@ -256,12 +293,15 @@ class OrnataRuntime:
             style=resolved_style,
             layout_style=layout_node.style if layout_node else None,
         )
+        if id(component) in self._backend_payloads:
+            gui_node.metadata["backend_style"] = self._backend_payloads[id(component)]
         self._populate_style_metadata(gui_node, resolved_style)
         if layout_box is not None:
             gui_node.x = int(getattr(layout_box, "x", 0) or 0)
             gui_node.y = int(getattr(layout_box, "y", 0) or 0)
             gui_node.width = int(getattr(layout_box, "width", 0) or 0)
             gui_node.height = int(getattr(layout_box, "height", 0) or 0)
+            self._logger.debug(f"[gui_tree] {gui_node.component_name}: pos=({gui_node.x},{gui_node.y}) size={gui_node.width}x{gui_node.height}")
 
         gui_node.children = [self._build_gui_tree(child, bindings, styles) for child in component.iter_children()]
         return gui_node

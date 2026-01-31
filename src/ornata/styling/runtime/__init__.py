@@ -7,6 +7,7 @@ from .borders import StylingBorders
 from .runtime import (
     StylingRuntime,
     get_styling_runtime,
+    resolve_backend_component_style,
     resolve_component_style,
 )
 from .typography import TypographyEngine
@@ -16,6 +17,7 @@ __all__ = [
     "StylingRuntime",
     "TypographyEngine",
     "get_styling_runtime",
+    "resolve_backend_component_style",
     "resolve_component_style",
     "borders",
     "runtime",

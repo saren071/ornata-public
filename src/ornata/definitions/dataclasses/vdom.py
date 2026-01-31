@@ -303,6 +303,13 @@ class VDOMTree:
 
         props.pop("children", None)
         props.pop("__weakref__", None)
+        
+        # Add dynamic properties for input components
+        if hasattr(component, "value"):
+            props["value"] = component.value
+        if hasattr(component, "component_id"):
+            props["component_id"] = component.component_id
+        
         children_nodes: list[VDOMNode] = []
         children_seq: list[Component | str] = list(getattr(component, "children", None) or [])
         for idx, child in enumerate(children_seq):

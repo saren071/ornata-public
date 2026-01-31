@@ -2,14 +2,14 @@
 from typing import Callable, Literal
 
 from ornata.definitions.dataclasses.rendering import RenderSignal
-from ornata.definitions.dataclasses.styling import HSLA, RGBA, ColorBlend, ColorFunction
+from ornata.definitions.dataclasses.styling import HSLA, RGBA, ColorBlend, ColorFunction, ColorLiteral
 from ornata.definitions.protocols import Canvas, GuiNodeLike
 
 type Vector2 = tuple[float, float]
 type Vector3 = tuple[float, float, float]
 type Vector4 = tuple[float, float, float, float]
 type LengthUnit = Literal["px", "cell", "%", "em"]
-type ColorSpec = str | RGBA | HSLA | ColorFunction | ColorBlend
+type ColorSpec = str | RGBA | HSLA | ColorFunction | ColorBlend | ColorLiteral
 type EasingFunction = Literal["linear", "ease", "ease-in", "ease-out", "ease-in-out", "step-start", "step-end", "cubic-bezier"]
 type ErrorList = list[str]
 type WarningList = list[str]

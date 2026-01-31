@@ -1,0 +1,23 @@
+{
+  "backend": "cli",
+  "style": {
+    "keyframes": {},
+    "component_extras": {},
+    "custom_properties": {}
+  },
+  "renderer_metadata": {
+    "backend": "cli",
+    "color_depth": "C256"
+  },
+  "layout_style": {
+    "direction": "row",
+    "wrap": false,
+    "gap": 0,
+    "justify": "start",
+    "align": "stretch",
+    "grid_column_gap": 0,
+    "grid_row_gap": 0,
+    "overflow": "visible"
+  },
+  "extras": {}
+}

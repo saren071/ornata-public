@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ornata.definitions.errors - Ornata Documentation</title>
+    <style>
+:root {
+    --bg-body: #f8fafc;
+    --bg-sidebar: #ffffff;
+    --bg-card: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --primary-light: #eff6ff;
+    --code-bg: #1e293b;
+    --code-text: #e2e8f0;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --error: #ef4444;
+    --gradient-accent: linear-gradient(90deg, #3b82f6, #60a5fa);
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-body: #0f172a;
+        --bg-sidebar: #1e293b;
+        --bg-card: #1e293b;
+        --text-main: #f1f5f9;
+        --text-muted: #94a3b8;
+        --border-color: #334155;
+        --primary: #60a5fa;
+        --primary-hover: #93c5fd;
+        --primary-light: rgba(59, 130, 246, 0.15);
+        --code-bg: #020617;
+        --code-text: #f8fafc;
+        --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+        --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.3);
+        --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.3);
+    }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { 
+    font-family: var(--font-sans); 
+    background: var(--bg-body); 
+    color: var(--text-main); 
+    height: 100vh; 
+    display: flex; 
+    overflow: hidden; 
+    line-height: 1.6; 
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+a { 
+    color: var(--primary); 
+    text-decoration: none; 
+    transition: color 0.2s ease, text-decoration 0.2s ease; 
+    font-weight: 500; 
+}
+a:hover { color: var(--primary-hover); text-decoration: underline; }
+a.broken-link { 
+    color: var(--error); 
+    text-decoration: line-through; 
+    cursor: not-allowed; 
+}
+a.broken-link:hover { color: var(--error); }
+
+/* LAYOUT */
+.layout { display: flex; width: 100%; height: 100%; }
+
+/* SIDEBAR */
+.sidebar { 
+    width: 300px; 
+    background: var(--bg-sidebar); 
+    border-right: 1px solid var(--border-color); 
+    display: flex; 
+    flex-direction: column; 
+    flex-shrink: 0; 
+    z-index: 20;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+.sidebar-header { 
+    padding: 1.5rem; 
+    border-bottom: 1px solid var(--border-color);
+    background: var(--gradient-accent);
+    color: white;
+}
+.brand { 
+    font-size: 1.25rem; 
+    font-weight: 800; 
+    letter-spacing: -0.025em; 
+    display: flex; 
+    align-items: center; 
+    gap: 0.5rem;
+    color: white;
+}
+.search-wrapper { margin-top: 1rem; position: relative; }
+.search-input { 
+    width: 100%; 
+    padding: 0.6rem 0.8rem; 
+    border-radius: 6px; 
+    border: 1px solid rgba(255,255,255,0.3); 
+    background: rgba(255,255,255,0.15); 
+    color: white; 
+    font-family: inherit; 
+    font-size: 0.9rem; 
+    transition: all 0.2s; 
+}
+.search-input::placeholder { color: rgba(255,255,255,0.7); }
+.search-input:focus { 
+    outline: none; 
+    background: rgba(255,255,255,0.25);
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.2); 
+}
+
+.nav-scroller { flex: 1; overflow-y: auto; padding: 1rem 0; }
+.nav-group { margin-bottom: 1.5rem; }
+.nav-header { 
+    padding: 0 1.5rem 0.5rem; 
+    font-size: 0.75rem; 
+    text-transform: uppercase; 
+    letter-spacing: 0.05em; 
+    color: var(--text-muted); 
+    font-weight: 700; 
+}
+.nav-link { 
+    display: block; 
+    padding: 0.4rem 1.5rem; 
+    font-size: 0.9rem; 
+    color: var(--text-muted); 
+    border-left: 3px solid transparent; 
+    transition: all 0.2s ease; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+}
+.nav-link:hover { 
+    background: var(--primary-light); 
+    color: var(--primary); 
+    text-decoration: none;
+}
+.nav-link.active { 
+    border-left-color: var(--primary); 
+    background: var(--primary-light); 
+    color: var(--primary); 
+    font-weight: 600; 
+}
+
+/* MAIN AREA */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+/* TOP BAR */
+.topbar { 
+    flex-shrink: 0; 
+    height: 60px; 
+    background: var(--bg-sidebar); 
+    border-bottom: 1px solid var(--border-color); 
+    display: flex; 
+    align-items: center; 
+    padding: 0 2rem; 
+    justify-content: space-between; 
+    position: sticky; 
+    top: 0; 
+    z-index: 10; 
+    backdrop-filter: blur(8px); 
+}
+.breadcrumbs { 
+    display: flex; 
+    align-items: center; 
+    gap: 0.5rem; 
+    color: var(--text-muted); 
+    font-size: 0.9rem; 
+}
+.crumb-link { 
+    color: var(--text-muted); 
+    transition: color 0.2s; 
+    position: relative;
+}
+.crumb-link:hover { 
+    color: var(--primary); 
+    text-decoration: none; 
+}
+.crumb-link:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--code-bg);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    margin-bottom: 0.25rem;
+}
+.crumb-active { color: var(--text-main); font-weight: 600; }
+.crumb-separator { opacity: 0.4; font-size: 0.8em; }
+.back-btn { 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 0.4rem; 
+    padding: 0.4rem 0.8rem; 
+    background: transparent; 
+    border: 1px solid var(--border-color); 
+    border-radius: 6px; 
+    color: var(--text-main); 
+    font-size: 0.85rem; 
+    font-weight: 500; 
+    cursor: pointer; 
+    transition: all 0.2s; 
+}
+.back-btn:hover { 
+    background: var(--primary-light); 
+    border-color: var(--primary); 
+    color: var(--primary); 
+}
+
+/* CONTENT SCROLL */
+.content-scroll { 
+    flex: 1; 
+    overflow-y: auto; 
+    padding: 2rem 4rem; 
+    scroll-behavior: smooth; 
+}
+.container { max-width: 900px; margin: 0 auto; padding-bottom: 6rem; }
+
+/* TYPOGRAPHY */
+h1 { 
+    font-size: 2.5rem; 
+    font-weight: 800; 
+    letter-spacing: -0.03em; 
+    margin: 0 0 1.5rem; 
+    line-height: 1.2; 
+    color: var(--text-main);
+    background: var(--gradient-accent);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+h2 { 
+    font-size: 1.75rem; 
+    font-weight: 700; 
+    letter-spacing: -0.01em; 
+    margin: 3rem 0 1rem; 
+    padding-bottom: 0.5rem; 
+    border-bottom: 2px solid var(--border-color); 
+    color: var(--text-main);
+    line-height: 1.3;
+}
+h3 { 
+    font-size: 1.25rem; 
+    font-weight: 600; 
+    margin: 2rem 0 0.75rem;
+    line-height: 1.4;
+}
+h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.5rem;
+    line-height: 1.4;
+}
+p { 
+    margin-bottom: 1.25rem; 
+    font-size: 1rem; 
+    color: var(--text-main); 
+    line-height: 1.7; 
+}
+
+/* CODE */
+code.inline { 
+    font-family: var(--font-mono); 
+    font-size: 0.85em; 
+    background: var(--primary-light); 
+    color: var(--primary); 
+    padding: 0.2em 0.4em; 
+    border-radius: 4px; 
+}
+pre { 
+    background: var(--code-bg); 
+    color: var(--code-text); 
+    border-radius: 8px; 
+    padding: 1.25rem; 
+    overflow-x: auto; 
+    margin: 1.5rem 0; 
+    box-shadow: var(--shadow-lg); 
+    border: 1px solid var(--border-color);
+    position: relative;
+    line-height: 1.5;
+}
+pre code { 
+    background: transparent; 
+    color: inherit; 
+    padding: 0; 
+    font-size: 0.9em; 
+    white-space: pre; 
+    font-family: var(--font-mono);
+}
+pre.language-python code { color: var(--code-text); }
+
+/* Syntax Highlighting */
+.keyword { color: #c792ea; font-weight: 600; }
+.string { color: #c3e88d; }
+.number { color: #f78c6c; }
+.comment { color: #546e7a; font-style: italic; }
+.function { color: #82aaff; }
+.class-name { color: #ffcb6b; font-weight: 600; }
+.builtin { color: #89ddff; }
+.decorator { color: #f07178; }
+
+/* Copy Button */
+.copy-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+}
+.copy-btn:hover {
+    background: rgba(255,255,255,0.2);
+}
+.copy-btn.copied {
+    background: var(--success);
+    border-color: var(--success);
+}
+
+/* Line Numbers */
+.line-numbers {
+    counter-reset: line;
+}
+.line-numbers code {
+    counter-increment: line;
+}
+.line-numbers code::before {
+    content: counter(line);
+    display: inline-block;
+    width: 2em;
+    margin-right: 1em;
+    color: var(--text-muted);
+    text-align: right;
+    user-select: none;
+}
+
+/* LISTS */
+ul, ol { 
+    margin: 1rem 0 1rem 1.5rem; 
+    padding: 0; 
+}
+li { 
+    margin: 0.5rem 0; 
+    line-height: 1.6; 
+}
+ul ul, ol ol, ul ol, ol ul { 
+    margin: 0.25rem 0 0.25rem 1.5rem; 
+}
+
+/* Task Lists */
+.task-list { list-style: none; margin-left: 0; }
+.task-list li { position: relative; padding-left: 1.75rem; }
+.task-list input[type="checkbox"] {
+    position: absolute;
+    left: 0;
+    top: 0.25rem;
+    margin: 0;
+}
+.task-list input[type="checkbox"]:checked + span {
+    text-decoration: line-through;
+    color: var(--text-muted);
+}
+
+/* BLOCKQUOTE */
+blockquote { 
+    border-left: 4px solid var(--primary); 
+    background: var(--bg-body); 
+    margin: 1.5rem 0; 
+    padding: 1rem 1.5rem; 
+    border-radius: 0 8px 8px 0; 
+    font-style: italic; 
+    color: var(--text-muted);
+    box-shadow: var(--shadow-sm);
+}
+
+/* TABLES */
+table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    margin: 2rem 0; 
+    border-radius: 8px; 
+    overflow: hidden; 
+    border: 1px solid var(--border-color); 
+    box-shadow: var(--shadow-md);
+}
+th, td { 
+    text-align: left; 
+    padding: 0.75rem 1rem; 
+    border-bottom: 1px solid var(--border-color); 
+}
+th { 
+    background: var(--bg-sidebar); 
+    font-weight: 600; 
+    font-size: 0.85rem; 
+    text-transform: uppercase; 
+    letter-spacing: 0.05em; 
+    color: var(--text-muted); 
+}
+th.center, td.center { text-align: center; }
+th.right, td.right { text-align: right; }
+tr:last-child td { border-bottom: none; }
+tbody tr:nth-child(even) { background: rgba(59, 130, 246, 0.05); }
+tbody tr:hover { background: var(--primary-light); }
+
+/* HORIZONTAL RULE */
+hr { 
+    border: 0; 
+    border-top: 2px solid var(--border-color); 
+    margin: 3rem 0; 
+}
+
+/* STRIKETHROUGH */
+del { 
+    text-decoration: line-through; 
+    color: var(--text-muted); 
+}
+
+/* FOOTNOTES */
+.footnotes { 
+    margin-top: 3rem; 
+    padding-top: 1.5rem; 
+    border-top: 1px solid var(--border-color); 
+    font-size: 0.9rem; 
+}
+.footnote-ref { 
+    color: var(--primary); 
+    font-size: 0.75em; 
+    vertical-align: super; 
+}
+
+/* API CARDS */
+.api-card { 
+    margin-bottom: 2rem; 
+    background: var(--bg-card); 
+    border: 1px solid var(--border-color); 
+    border-radius: 10px; 
+    overflow: hidden; 
+    box-shadow: var(--shadow-md); 
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; 
+}
+.api-card:hover { 
+    transform: translateY(-2px); 
+    box-shadow: var(--shadow-lg); 
+    border-color: var(--primary); 
+}
+.api-card.class-card { border-left: 4px solid #4338ca; }
+.api-card.function-card { border-left: 4px solid #15803d; }
+.api-card.method-card { border-left: 4px solid #475569; }
+
+.api-header { 
+    background: var(--bg-sidebar); 
+    padding: 0.75rem 1.25rem; 
+    border-bottom: 1px solid var(--border-color); 
+    font-family: var(--font-mono); 
+    font-size: 0.9rem; 
+    display: flex; 
+    align-items: center; 
+    flex-wrap: wrap; 
+    gap: 0.75rem; 
+}
+.tag { 
+    padding: 3px 8px; 
+    border-radius: 4px; 
+    font-size: 0.7rem; 
+    font-weight: 700; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+}
+.tag-class { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
+.tag-func { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+.tag-method { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+
+.api-name { 
+    font-weight: 700; 
+    color: var(--primary); 
+    font-size: 1rem; 
+}
+.api-sig { 
+    color: var(--text-muted); 
+    opacity: 0.8; 
+    font-size: 0.85rem; 
+}
+.type-hint { 
+    color: #f59e0b; 
+    font-weight: 600; 
+}
+.api-body { padding: 1.25rem; }
+
+/* Collapsible Sections */
+.collapsible-toggle {
+    background: var(--bg-body);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 1rem 0;
+    transition: all 0.2s;
+}
+.collapsible-toggle:hover {
+    background: var(--primary-light);
+    border-color: var(--primary);
+}
+.collapsible-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+.collapsible-content.expanded {
+    max-height: 10000px;
+}
+
+/* UTILITIES */
+.hidden { display: none !important; }
+.text-muted { color: var(--text-muted); }
+.text-center { text-align: center; }
+.mt-4 { margin-top: 2rem; }
+
+/* EMOJI */
+.emoji { 
+    display: inline-block; 
+    width: 1.2em; 
+    height: 1.2em; 
+    vertical-align: -0.2em; 
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .sidebar { width: 250px; }
+    .content-scroll { padding: 1rem 1.5rem; }
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.5rem; }
+}
+
+</style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span class="brand">📚 Ornata Documentation</span>
+                <div class="search-wrapper">
+                    <input type="text" id="search-input" class="search-input" placeholder="Search modules...">
+                </div>
+            </div>
+            <nav class="nav-scroller">
+                <div class="nav-group">
+                    <div class="nav-header">Modules</div>
+                    <a href="ornata.html" class="nav-link">ornata</a><a href="ornata.__main__.html" class="nav-link">ornata.__main__</a><a href="ornata._lazy.html" class="nav-link">ornata._lazy</a><a href="ornata.api.html" class="nav-link">ornata.api</a><a href="ornata.api._warnings.html" class="nav-link">ornata.api._warnings</a><a href="ornata.api.exports.html" class="nav-link">ornata.api.exports</a><a href="ornata.api.exports.api.html" class="nav-link">ornata.api.exports.api</a><a href="ornata.api.exports.cli.html" class="nav-link">ornata.api.exports.cli</a><a href="ornata.api.exports.components.html" class="nav-link">ornata.api.exports.components</a><a href="ornata.api.exports.definitions.html" class="nav-link">ornata.api.exports.definitions</a><a href="ornata.api.exports.effects.html" class="nav-link">ornata.api.exports.effects</a><a href="ornata.api.exports.events.html" class="nav-link">ornata.api.exports.events</a><a href="ornata.api.exports.gpu.html" class="nav-link">ornata.api.exports.gpu</a><a href="ornata.api.exports.interop.html" class="nav-link">ornata.api.exports.interop</a><a href="ornata.api.exports.kernel.html" class="nav-link">ornata.api.exports.kernel</a><a href="ornata.api.exports.layout.html" class="nav-link">ornata.api.exports.layout</a><a href="ornata.api.exports.optimization.html" class="nav-link">ornata.api.exports.optimization</a><a href="ornata.api.exports.ornata.html" class="nav-link">ornata.api.exports.ornata</a><a href="ornata.api.exports.plugins.html" class="nav-link">ornata.api.exports.plugins</a><a href="ornata.api.exports.rendering.html" class="nav-link">ornata.api.exports.rendering</a><a href="ornata.api.exports.styling.html" class="nav-link">ornata.api.exports.styling</a><a href="ornata.api.exports.utils.html" class="nav-link">ornata.api.exports.utils</a><a href="ornata.api.exports.vdom.html" class="nav-link">ornata.api.exports.vdom</a><a href="ornata.api.public_exports.html" class="nav-link">ornata.api.public_exports</a><a href="ornata.application.html" class="nav-link">ornata.application</a><a href="ornata.cli.html" class="nav-link">ornata.cli</a><a href="ornata.cli.__main__.html" class="nav-link">ornata.cli.__main__</a><a href="ornata.cli.main.html" class="nav-link">ornata.cli.main</a><a href="ornata.components.html" class="nav-link">ornata.components</a><a href="ornata.components.base.html" class="nav-link">ornata.components.base</a><a href="ornata.components.button.html" class="nav-link">ornata.components.button</a><a href="ornata.components.container.html" class="nav-link">ornata.components.container</a><a href="ornata.components.input.html" class="nav-link">ornata.components.input</a><a href="ornata.components.table.html" class="nav-link">ornata.components.table</a><a href="ornata.components.text.html" class="nav-link">ornata.components.text</a><a href="ornata.core.html" class="nav-link">ornata.core</a><a href="ornata.core.application.html" class="nav-link">ornata.core.application</a><a href="ornata.core.runtime.html" class="nav-link">ornata.core.runtime</a><a href="ornata.definitions.html" class="nav-link">ornata.definitions</a><a href="ornata.definitions.constants.html" class="nav-link">ornata.definitions.constants</a><a href="ornata.definitions.dataclasses.html" class="nav-link">ornata.definitions.dataclasses</a><a href="ornata.definitions.dataclasses.components.html" class="nav-link">ornata.definitions.dataclasses.components</a><a href="ornata.definitions.dataclasses.core.html" class="nav-link">ornata.definitions.dataclasses.core</a><a href="ornata.definitions.dataclasses.effects.html" class="nav-link">ornata.definitions.dataclasses.effects</a><a href="ornata.definitions.dataclasses.events.html" class="nav-link">ornata.definitions.dataclasses.events</a><a href="ornata.definitions.dataclasses.gpu.html" class="nav-link">ornata.definitions.dataclasses.gpu</a><a href="ornata.definitions.dataclasses.kernel.html" class="nav-link">ornata.definitions.dataclasses.kernel</a><a href="ornata.definitions.dataclasses.layout.html" class="nav-link">ornata.definitions.dataclasses.layout</a><a href="ornata.definitions.dataclasses.plugins.html" class="nav-link">ornata.definitions.dataclasses.plugins</a><a href="ornata.definitions.dataclasses.rendering.html" class="nav-link">ornata.definitions.dataclasses.rendering</a><a href="ornata.definitions.dataclasses.shared.html" class="nav-link">ornata.definitions.dataclasses.shared</a><a href="ornata.definitions.dataclasses.styling.html" class="nav-link">ornata.definitions.dataclasses.styling</a><a href="ornata.definitions.dataclasses.vdom.html" class="nav-link">ornata.definitions.dataclasses.vdom</a><a href="ornata.definitions.enums.html" class="nav-link">ornata.definitions.enums</a><a href="ornata.definitions.errors.html" class="nav-link active">ornata.definitions.errors</a><a href="ornata.definitions.flags.html" class="nav-link">ornata.definitions.flags</a><a href="ornata.definitions.protocols.html" class="nav-link">ornata.definitions.protocols</a><a href="ornata.definitions.type_alias.html" class="nav-link">ornata.definitions.type_alias</a><a href="ornata.definitions.unicode_assets.html" class="nav-link">ornata.definitions.unicode_assets</a><a href="ornata.effects.html" class="nav-link">ornata.effects</a><a href="ornata.effects.animation.html" class="nav-link">ornata.effects.animation</a><a href="ornata.effects.animation.coordinator.html" class="nav-link">ornata.effects.animation.coordinator</a><a href="ornata.effects.animation.easing.html" class="nav-link">ornata.effects.animation.easing</a><a href="ornata.effects.animation.effects.html" class="nav-link">ornata.effects.animation.effects</a><a href="ornata.effects.animation.engine.html" class="nav-link">ornata.effects.animation.engine</a><a href="ornata.effects.animation.events.html" class="nav-link">ornata.effects.animation.events</a><a href="ornata.effects.animation.interfaces.html" class="nav-link">ornata.effects.animation.interfaces</a><a href="ornata.effects.animation.keyframes.html" class="nav-link">ornata.effects.animation.keyframes</a><a href="ornata.effects.animation.optimization.html" class="nav-link">ornata.effects.animation.optimization</a><a href="ornata.effects.animation.timeline.html" class="nav-link">ornata.effects.animation.timeline</a><a href="ornata.effects.particles.html" class="nav-link">ornata.effects.particles</a><a href="ornata.effects.particles.config.html" class="nav-link">ornata.effects.particles.config</a><a href="ornata.effects.particles.effects.html" class="nav-link">ornata.effects.particles.effects</a><a href="ornata.effects.particles.emitter.html" class="nav-link">ornata.effects.particles.emitter</a><a href="ornata.effects.particles.engine.html" class="nav-link">ornata.effects.particles.engine</a><a href="ornata.effects.particles.interfaces.html" class="nav-link">ornata.effects.particles.interfaces</a><a href="ornata.effects.particles.optimization.html" class="nav-link">ornata.effects.particles.optimization</a><a href="ornata.effects.particles.physics.html" class="nav-link">ornata.effects.particles.physics</a><a href="ornata.effects.particles.renderer.html" class="nav-link">ornata.effects.particles.renderer</a><a href="ornata.effects.timeline.html" class="nav-link">ornata.effects.timeline</a><a href="ornata.effects.transitions.html" class="nav-link">ornata.effects.transitions</a><a href="ornata.events.html" class="nav-link">ornata.events</a><a href="ornata.events.core.html" class="nav-link">ornata.events.core</a><a href="ornata.events.core.bus.html" class="nav-link">ornata.events.core.bus</a><a href="ornata.events.core.object_pool.html" class="nav-link">ornata.events.core.object_pool</a><a href="ornata.events.core.subsystem.html" class="nav-link">ornata.events.core.subsystem</a><a href="ornata.events.handlers.html" class="nav-link">ornata.events.handlers</a><a href="ornata.events.handlers.handlers.html" class="nav-link">ornata.events.handlers.handlers</a><a href="ornata.events.history.html" class="nav-link">ornata.events.history</a><a href="ornata.events.history.replay.html" class="nav-link">ornata.events.history.replay</a><a href="ornata.events.platform.html" class="nav-link">ornata.events.platform</a><a href="ornata.events.platform.cli.html" class="nav-link">ornata.events.platform.cli</a><a href="ornata.events.platform.factory.html" class="nav-link">ornata.events.platform.factory</a><a href="ornata.events.platform.windows.html" class="nav-link">ornata.events.platform.windows</a><a href="ornata.events.processing.html" class="nav-link">ornata.events.processing</a><a href="ornata.events.processing.async_processor.html" class="nav-link">ornata.events.processing.async_processor</a><a href="ornata.events.processing.filtering.html" class="nav-link">ornata.events.processing.filtering</a><a href="ornata.events.processing.propagation.html" class="nav-link">ornata.events.processing.propagation</a><a href="ornata.events.runtime.html" class="nav-link">ornata.events.runtime</a><a href="ornata.gpu.html" class="nav-link">ornata.gpu</a><a href="ornata.gpu.backends.html" class="nav-link">ornata.gpu.backends</a><a href="ornata.gpu.backends.directx.html" class="nav-link">ornata.gpu.backends.directx</a><a href="ornata.gpu.backends.directx.backend.html" class="nav-link">ornata.gpu.backends.directx.backend</a><a href="ornata.gpu.backends.directx.buffer.html" class="nav-link">ornata.gpu.backends.directx.buffer</a><a href="ornata.gpu.backends.directx.context.html" class="nav-link">ornata.gpu.backends.directx.context</a><a href="ornata.gpu.backends.directx.device.html" class="nav-link">ornata.gpu.backends.directx.device</a><a href="ornata.gpu.backends.directx.input_layout.html" class="nav-link">ornata.gpu.backends.directx.input_layout</a><a href="ornata.gpu.backends.directx.pipeline.html" class="nav-link">ornata.gpu.backends.directx.pipeline</a><a href="ornata.gpu.backends.directx.sampler.html" class="nav-link">ornata.gpu.backends.directx.sampler</a><a href="ornata.gpu.backends.directx.shader_compiler.html" class="nav-link">ornata.gpu.backends.directx.shader_compiler</a><a href="ornata.gpu.backends.directx.swapchain.html" class="nav-link">ornata.gpu.backends.directx.swapchain</a><a href="ornata.gpu.backends.directx.sync.html" class="nav-link">ornata.gpu.backends.directx.sync</a><a href="ornata.gpu.backends.directx.texture.html" class="nav-link">ornata.gpu.backends.directx.texture</a><a href="ornata.gpu.backends.directx.utils.html" class="nav-link">ornata.gpu.backends.directx.utils</a><a href="ornata.gpu.backends.opengl.html" class="nav-link">ornata.gpu.backends.opengl</a><a href="ornata.gpu.backends.opengl.backend.html" class="nav-link">ornata.gpu.backends.opengl.backend</a><a href="ornata.gpu.backends.opengl.context.html" class="nav-link">ornata.gpu.backends.opengl.context</a><a href="ornata.gpu.backends.opengl.ibo.html" class="nav-link">ornata.gpu.backends.opengl.ibo</a><a href="ornata.gpu.backends.opengl.instancing.html" class="nav-link">ornata.gpu.backends.opengl.instancing</a><a href="ornata.gpu.backends.opengl.pipeline.html" class="nav-link">ornata.gpu.backends.opengl.pipeline</a><a href="ornata.gpu.backends.opengl.program.html" class="nav-link">ornata.gpu.backends.opengl.program</a><a href="ornata.gpu.backends.opengl.shader.html" class="nav-link">ornata.gpu.backends.opengl.shader</a><a href="ornata.gpu.backends.opengl.state.html" class="nav-link">ornata.gpu.backends.opengl.state</a><a href="ornata.gpu.backends.opengl.textures.html" class="nav-link">ornata.gpu.backends.opengl.textures</a><a href="ornata.gpu.backends.opengl.ubo.html" class="nav-link">ornata.gpu.backends.opengl.ubo</a><a href="ornata.gpu.backends.opengl.utils.html" class="nav-link">ornata.gpu.backends.opengl.utils</a><a href="ornata.gpu.backends.opengl.vao.html" class="nav-link">ornata.gpu.backends.opengl.vao</a><a href="ornata.gpu.backends.opengl.vbo.html" class="nav-link">ornata.gpu.backends.opengl.vbo</a><a href="ornata.gpu.batching.html" class="nav-link">ornata.gpu.batching</a><a href="ornata.gpu.batching.batching.html" class="nav-link">ornata.gpu.batching.batching</a><a href="ornata.gpu.buffers.html" class="nav-link">ornata.gpu.buffers</a><a href="ornata.gpu.buffers.base.html" class="nav-link">ornata.gpu.buffers.base</a><a href="ornata.gpu.buffers.index.html" class="nav-link">ornata.gpu.buffers.index</a><a href="ornata.gpu.buffers.uniform.html" class="nav-link">ornata.gpu.buffers.uniform</a><a href="ornata.gpu.buffers.utils.html" class="nav-link">ornata.gpu.buffers.utils</a><a href="ornata.gpu.buffers.vertex.html" class="nav-link">ornata.gpu.buffers.vertex</a><a href="ornata.gpu.device.html" class="nav-link">ornata.gpu.device</a><a href="ornata.gpu.device.capabilities.html" class="nav-link">ornata.gpu.device.capabilities</a><a href="ornata.gpu.device.device.html" class="nav-link">ornata.gpu.device.device</a><a href="ornata.gpu.device.geometry.html" class="nav-link">ornata.gpu.device.geometry</a><a href="ornata.gpu.device.limits.html" class="nav-link">ornata.gpu.device.limits</a><a href="ornata.gpu.device.selection.html" class="nav-link">ornata.gpu.device.selection</a><a href="ornata.gpu.fallback.html" class="nav-link">ornata.gpu.fallback</a><a href="ornata.gpu.fallback.batching.html" class="nav-link">ornata.gpu.fallback.batching</a><a href="ornata.gpu.fallback.blitter.html" class="nav-link">ornata.gpu.fallback.blitter</a><a href="ornata.gpu.fallback.cpu_fallback.html" class="nav-link">ornata.gpu.fallback.cpu_fallback</a><a href="ornata.gpu.fallback.instancing.html" class="nav-link">ornata.gpu.fallback.instancing</a><a href="ornata.gpu.fallback.math.html" class="nav-link">ornata.gpu.fallback.math</a><a href="ornata.gpu.fallback.rasterizer.html" class="nav-link">ornata.gpu.fallback.rasterizer</a><a href="ornata.gpu.fallback.sw_buffers.html" class="nav-link">ornata.gpu.fallback.sw_buffers</a><a href="ornata.gpu.fallback.sw_pipeline.html" class="nav-link">ornata.gpu.fallback.sw_pipeline</a><a href="ornata.gpu.fallback.sw_textures.html" class="nav-link">ornata.gpu.fallback.sw_textures</a><a href="ornata.gpu.instancing.html" class="nav-link">ornata.gpu.instancing</a><a href="ornata.gpu.instancing.instancing.html" class="nav-link">ornata.gpu.instancing.instancing</a><a href="ornata.gpu.memory.html" class="nav-link">ornata.gpu.memory</a><a href="ornata.gpu.memory.allocator.html" class="nav-link">ornata.gpu.memory.allocator</a><a href="ornata.gpu.memory.residency.html" class="nav-link">ornata.gpu.memory.residency</a><a href="ornata.gpu.memory.staging.html" class="nav-link">ornata.gpu.memory.staging</a><a href="ornata.gpu.memory.sync.html" class="nav-link">ornata.gpu.memory.sync</a><a href="ornata.gpu.misc.html" class="nav-link">ornata.gpu.misc</a><a href="ornata.gpu.pipelines.html" class="nav-link">ornata.gpu.pipelines</a><a href="ornata.gpu.pipelines.compute_pipeline.html" class="nav-link">ornata.gpu.pipelines.compute_pipeline</a><a href="ornata.gpu.pipelines.graphics_pipeline.html" class="nav-link">ornata.gpu.pipelines.graphics_pipeline</a><a href="ornata.gpu.programs.html" class="nav-link">ornata.gpu.programs</a><a href="ornata.gpu.programs.base.html" class="nav-link">ornata.gpu.programs.base</a><a href="ornata.gpu.programs.compute_program.html" class="nav-link">ornata.gpu.programs.compute_program</a><a href="ornata.gpu.programs.fragment_program.html" class="nav-link">ornata.gpu.programs.fragment_program</a><a href="ornata.gpu.programs.geometry_program.html" class="nav-link">ornata.gpu.programs.geometry_program</a><a href="ornata.gpu.programs.mesh_program.html" class="nav-link">ornata.gpu.programs.mesh_program</a><a href="ornata.gpu.programs.raytracing_programs.html" class="nav-link">ornata.gpu.programs.raytracing_programs</a><a href="ornata.gpu.programs.shader_manager.html" class="nav-link">ornata.gpu.programs.shader_manager</a><a href="ornata.gpu.programs.task_program.html" class="nav-link">ornata.gpu.programs.task_program</a><a href="ornata.gpu.programs.tess_control_program.html" class="nav-link">ornata.gpu.programs.tess_control_program</a><a href="ornata.gpu.programs.tess_eval_program.html" class="nav-link">ornata.gpu.programs.tess_eval_program</a><a href="ornata.gpu.programs.vertex_program.html" class="nav-link">ornata.gpu.programs.vertex_program</a><a href="ornata.gpu.resources.html" class="nav-link">ornata.gpu.resources</a><a href="ornata.gpu.textures.html" class="nav-link">ornata.gpu.textures</a><a href="ornata.gpu.textures.sampler_state.html" class="nav-link">ornata.gpu.textures.sampler_state</a><a href="ornata.gpu.textures.texture2d.html" class="nav-link">ornata.gpu.textures.texture2d</a><a href="ornata.gpu.textures.texturecube.html" class="nav-link">ornata.gpu.textures.texturecube</a><a href="ornata.interop.html" class="nav-link">ornata.interop</a><a href="ornata.interop.ctypes_compilation.html" class="nav-link">ornata.interop.ctypes_compilation</a><a href="ornata.interop.ctypes_compilation.registry.html" class="nav-link">ornata.interop.ctypes_compilation.registry</a><a href="ornata.interop.ctypes_compilation.windows.html" class="nav-link">ornata.interop.ctypes_compilation.windows</a><a href="ornata.interop.ctypes_compilation.windows.com.html" class="nav-link">ornata.interop.ctypes_compilation.windows.com</a><a href="ornata.interop.ctypes_compilation.windows.d3d11.html" class="nav-link">ornata.interop.ctypes_compilation.windows.d3d11</a><a href="ornata.interop.ctypes_compilation.windows.d3d11_devicecontext1.html" class="nav-link">ornata.interop.ctypes_compilation.windows.d3d11_devicecontext1</a><a href="ornata.interop.ctypes_compilation.windows.d3dcompile.html" class="nav-link">ornata.interop.ctypes_compilation.windows.d3dcompile</a><a href="ornata.interop.ctypes_compilation.windows.dxgi.html" class="nav-link">ornata.interop.ctypes_compilation.windows.dxgi</a><a href="ornata.interop.ctypes_compilation.windows.foundation.html" class="nav-link">ornata.interop.ctypes_compilation.windows.foundation</a><a href="ornata.interop.ctypes_compilation.windows.gdi32.html" class="nav-link">ornata.interop.ctypes_compilation.windows.gdi32</a><a href="ornata.interop.ctypes_compilation.windows.kernel32.html" class="nav-link">ornata.interop.ctypes_compilation.windows.kernel32</a><a href="ornata.interop.ctypes_compilation.windows.ole32.html" class="nav-link">ornata.interop.ctypes_compilation.windows.ole32</a><a href="ornata.interop.ctypes_compilation.windows.opengl.html" class="nav-link">ornata.interop.ctypes_compilation.windows.opengl</a><a href="ornata.interop.ctypes_compilation.windows.user32.html" class="nav-link">ornata.interop.ctypes_compilation.windows.user32</a><a href="ornata.kernel.html" class="nav-link">ornata.kernel</a><a href="ornata.kernel.bootstrap.html" class="nav-link">ornata.kernel.bootstrap</a><a href="ornata.kernel.config.html" class="nav-link">ornata.kernel.config</a><a href="ornata.kernel.registry.html" class="nav-link">ornata.kernel.registry</a><a href="ornata.kernel.runtime.html" class="nav-link">ornata.kernel.runtime</a><a href="ornata.kernel.versioning.html" class="nav-link">ornata.kernel.versioning</a><a href="ornata.layout.html" class="nav-link">ornata.layout</a><a href="ornata.layout.adapters.html" class="nav-link">ornata.layout.adapters</a><a href="ornata.layout.adapters.osts_converter.html" class="nav-link">ornata.layout.adapters.osts_converter</a><a href="ornata.layout.algorithms.html" class="nav-link">ornata.layout.algorithms</a><a href="ornata.layout.algorithms.absolute.html" class="nav-link">ornata.layout.algorithms.absolute</a><a href="ornata.layout.algorithms.docking.html" class="nav-link">ornata.layout.algorithms.docking</a><a href="ornata.layout.algorithms.flex.html" class="nav-link">ornata.layout.algorithms.flex</a><a href="ornata.layout.algorithms.grid.html" class="nav-link">ornata.layout.algorithms.grid</a><a href="ornata.layout.algorithms.responsive.html" class="nav-link">ornata.layout.algorithms.responsive</a><a href="ornata.layout.core.html" class="nav-link">ornata.layout.core</a><a href="ornata.layout.core.constraints.html" class="nav-link">ornata.layout.core.constraints</a><a href="ornata.layout.core.utils.html" class="nav-link">ornata.layout.core.utils</a><a href="ornata.layout.diagnostics.html" class="nav-link">ornata.layout.diagnostics</a><a href="ornata.layout.diagnostics.debug.html" class="nav-link">ornata.layout.diagnostics.debug</a><a href="ornata.layout.engine.html" class="nav-link">ornata.layout.engine</a><a href="ornata.layout.engine.engine.html" class="nav-link">ornata.layout.engine.engine</a><a href="ornata.layout.geometry.html" class="nav-link">ornata.layout.geometry</a><a href="ornata.layout.geometry.dirty_rectangles.html" class="nav-link">ornata.layout.geometry.dirty_rectangles</a><a href="ornata.layout.scrolling.html" class="nav-link">ornata.layout.scrolling</a><a href="ornata.layout.scrolling.virtual_scrolling.html" class="nav-link">ornata.layout.scrolling.virtual_scrolling</a><a href="ornata.optimization.html" class="nav-link">ornata.optimization</a><a href="ornata.optimization.cython.html" class="nav-link">ornata.optimization.cython</a><a href="ornata.optimization.cython.compiler.html" class="nav-link">ornata.optimization.cython.compiler</a><a href="ornata.optimization.cython.extensions.html" class="nav-link">ornata.optimization.cython.extensions</a><a href="ornata.plugins.html" class="nav-link">ornata.plugins</a><a href="ornata.plugins.interfaces.html" class="nav-link">ornata.plugins.interfaces</a><a href="ornata.plugins.manager.html" class="nav-link">ornata.plugins.manager</a><a href="ornata.plugins.registry.html" class="nav-link">ornata.plugins.registry</a><a href="ornata.rendering.html" class="nav-link">ornata.rendering</a><a href="ornata.rendering.adapters.html" class="nav-link">ornata.rendering.adapters</a><a href="ornata.rendering.adapters.base.html" class="nav-link">ornata.rendering.adapters.base</a><a href="ornata.rendering.adapters.cli.html" class="nav-link">ornata.rendering.adapters.cli</a><a href="ornata.rendering.adapters.gui.html" class="nav-link">ornata.rendering.adapters.gui</a><a href="ornata.rendering.adapters.tty.html" class="nav-link">ornata.rendering.adapters.tty</a><a href="ornata.rendering.backends.html" class="nav-link">ornata.rendering.backends</a><a href="ornata.rendering.backends.cli.html" class="nav-link">ornata.rendering.backends.cli</a><a href="ornata.rendering.backends.cli.ansi.html" class="nav-link">ornata.rendering.backends.cli.ansi</a><a href="ornata.rendering.backends.cli.ansi.cursor.html" class="nav-link">ornata.rendering.backends.cli.ansi.cursor</a><a href="ornata.rendering.backends.cli.ansi.palette.html" class="nav-link">ornata.rendering.backends.cli.ansi.palette</a><a href="ornata.rendering.backends.cli.ansi.screen_buffer.html" class="nav-link">ornata.rendering.backends.cli.ansi.screen_buffer</a><a href="ornata.rendering.backends.cli.ansi.sgr.html" class="nav-link">ornata.rendering.backends.cli.ansi.sgr</a><a href="ornata.rendering.backends.cli.input.html" class="nav-link">ornata.rendering.backends.cli.input</a><a href="ornata.rendering.backends.cli.platform.html" class="nav-link">ornata.rendering.backends.cli.platform</a><a href="ornata.rendering.backends.cli.platform.conhost.html" class="nav-link">ornata.rendering.backends.cli.platform.conhost</a><a href="ornata.rendering.backends.cli.platform.detector.html" class="nav-link">ornata.rendering.backends.cli.platform.detector</a><a href="ornata.rendering.backends.cli.renderer.html" class="nav-link">ornata.rendering.backends.cli.renderer</a><a href="ornata.rendering.backends.cli.session.html" class="nav-link">ornata.rendering.backends.cli.session</a><a href="ornata.rendering.backends.cli.terminal.html" class="nav-link">ornata.rendering.backends.cli.terminal</a><a href="ornata.rendering.backends.cli.terminal_app.html" class="nav-link">ornata.rendering.backends.cli.terminal_app</a><a href="ornata.rendering.backends.gui.html" class="nav-link">ornata.rendering.backends.gui</a><a href="ornata.rendering.backends.gui.app.html" class="nav-link">ornata.rendering.backends.gui.app</a><a href="ornata.rendering.backends.gui.compositor.html" class="nav-link">ornata.rendering.backends.gui.compositor</a><a href="ornata.rendering.backends.gui.contexts.html" class="nav-link">ornata.rendering.backends.gui.contexts</a><a href="ornata.rendering.backends.gui.contexts.gpu_integration.html" class="nav-link">ornata.rendering.backends.gui.contexts.gpu_integration</a><a href="ornata.rendering.backends.gui.input.html" class="nav-link">ornata.rendering.backends.gui.input</a><a href="ornata.rendering.backends.gui.platform.html" class="nav-link">ornata.rendering.backends.gui.platform</a><a href="ornata.rendering.backends.gui.platform.factory.html" class="nav-link">ornata.rendering.backends.gui.platform.factory</a><a href="ornata.rendering.backends.gui.platform.win32.html" class="nav-link">ornata.rendering.backends.gui.platform.win32</a><a href="ornata.rendering.backends.gui.platform.win32.events.html" class="nav-link">ornata.rendering.backends.gui.platform.win32.events</a><a href="ornata.rendering.backends.gui.platform.win32.window.html" class="nav-link">ornata.rendering.backends.gui.platform.win32.window</a><a href="ornata.rendering.backends.gui.renderer.html" class="nav-link">ornata.rendering.backends.gui.renderer</a><a href="ornata.rendering.backends.gui.runtime.html" class="nav-link">ornata.rendering.backends.gui.runtime</a><a href="ornata.rendering.backends.gui.window.html" class="nav-link">ornata.rendering.backends.gui.window</a><a href="ornata.rendering.backends.tty.html" class="nav-link">ornata.rendering.backends.tty</a><a href="ornata.rendering.backends.tty.input.html" class="nav-link">ornata.rendering.backends.tty.input</a><a href="ornata.rendering.backends.tty.platform.html" class="nav-link">ornata.rendering.backends.tty.platform</a><a href="ornata.rendering.backends.tty.platform.bsd.html" class="nav-link">ornata.rendering.backends.tty.platform.bsd</a><a href="ornata.rendering.backends.tty.renderer.html" class="nav-link">ornata.rendering.backends.tty.renderer</a><a href="ornata.rendering.backends.tty.termios.html" class="nav-link">ornata.rendering.backends.tty.termios</a><a href="ornata.rendering.backends.tty.vt100.html" class="nav-link">ornata.rendering.backends.tty.vt100</a><a href="ornata.rendering.core.html" class="nav-link">ornata.rendering.core</a><a href="ornata.rendering.core.base_renderer.html" class="nav-link">ornata.rendering.core.base_renderer</a><a href="ornata.rendering.core.capabilities.html" class="nav-link">ornata.rendering.core.capabilities</a><a href="ornata.rendering.core.compositor.html" class="nav-link">ornata.rendering.core.compositor</a><a href="ornata.rendering.core.frame.html" class="nav-link">ornata.rendering.core.frame</a><a href="ornata.rendering.core.pipeline.html" class="nav-link">ornata.rendering.core.pipeline</a><a href="ornata.rendering.core.render_signals.html" class="nav-link">ornata.rendering.core.render_signals</a><a href="ornata.rendering.vdom_bridge.html" class="nav-link">ornata.rendering.vdom_bridge</a><a href="ornata.styling.html" class="nav-link">ornata.styling</a><a href="ornata.styling.adapters.html" class="nav-link">ornata.styling.adapters</a><a href="ornata.styling.adapters.cli_mapper.html" class="nav-link">ornata.styling.adapters.cli_mapper</a><a href="ornata.styling.adapters.gui_mapper.html" class="nav-link">ornata.styling.adapters.gui_mapper</a><a href="ornata.styling.adapters.tty_mapper.html" class="nav-link">ornata.styling.adapters.tty_mapper</a><a href="ornata.styling.colorkit.html" class="nav-link">ornata.styling.colorkit</a><a href="ornata.styling.colorkit.ansi.html" class="nav-link">ornata.styling.colorkit.ansi</a><a href="ornata.styling.colorkit.contrast.html" class="nav-link">ornata.styling.colorkit.contrast</a><a href="ornata.styling.colorkit.gradients.html" class="nav-link">ornata.styling.colorkit.gradients</a><a href="ornata.styling.colorkit.named_colors.html" class="nav-link">ornata.styling.colorkit.named_colors</a><a href="ornata.styling.colorkit.palette.html" class="nav-link">ornata.styling.colorkit.palette</a><a href="ornata.styling.colorkit.resolver.html" class="nav-link">ornata.styling.colorkit.resolver</a><a href="ornata.styling.colorkit.spaces.html" class="nav-link">ornata.styling.colorkit.spaces</a><a href="ornata.styling.colorkit.vision.html" class="nav-link">ornata.styling.colorkit.vision</a><a href="ornata.styling.colors.html" class="nav-link">ornata.styling.colors</a><a href="ornata.styling.integration_service.html" class="nav-link">ornata.styling.integration_service</a><a href="ornata.styling.language.html" class="nav-link">ornata.styling.language</a><a href="ornata.styling.language.cascade.html" class="nav-link">ornata.styling.language.cascade</a><a href="ornata.styling.language.diag.html" class="nav-link">ornata.styling.language.diag</a><a href="ornata.styling.language.engine.html" class="nav-link">ornata.styling.language.engine</a><a href="ornata.styling.language.grammar.html" class="nav-link">ornata.styling.language.grammar</a><a href="ornata.styling.runtime.html" class="nav-link">ornata.styling.runtime</a><a href="ornata.styling.runtime.borders.html" class="nav-link">ornata.styling.runtime.borders</a><a href="ornata.styling.runtime.runtime.html" class="nav-link">ornata.styling.runtime.runtime</a><a href="ornata.styling.runtime.typography.html" class="nav-link">ornata.styling.runtime.typography</a><a href="ornata.styling.services.html" class="nav-link">ornata.styling.services</a><a href="ornata.styling.theming.html" class="nav-link">ornata.styling.theming</a><a href="ornata.styling.theming.manager.html" class="nav-link">ornata.styling.theming.manager</a><a href="ornata.styling.theming.registry.html" class="nav-link">ornata.styling.theming.registry</a><a href="ornata.styling.validators.html" class="nav-link">ornata.styling.validators</a><a href="ornata.utils.html" class="nav-link">ornata.utils</a><a href="ornata.utils.cache.html" class="nav-link">ornata.utils.cache</a><a href="ornata.utils.lock.html" class="nav-link">ornata.utils.lock</a><a href="ornata.utils.logging.html" class="nav-link">ornata.utils.logging</a><a href="ornata.utils.memory.html" class="nav-link">ornata.utils.memory</a><a href="ornata.vdom.html" class="nav-link">ornata.vdom</a><a href="ornata.vdom.core.html" class="nav-link">ornata.vdom.core</a><a href="ornata.vdom.core.binding_integration.html" class="nav-link">ornata.vdom.core.binding_integration</a><a href="ornata.vdom.core.bindings.html" class="nav-link">ornata.vdom.core.bindings</a><a href="ornata.vdom.core.host_objects.html" class="nav-link">ornata.vdom.core.host_objects</a><a href="ornata.vdom.core.interfaces.html" class="nav-link">ornata.vdom.core.interfaces</a><a href="ornata.vdom.core.keys.html" class="nav-link">ornata.vdom.core.keys</a><a href="ornata.vdom.core.refs.html" class="nav-link">ornata.vdom.core.refs</a><a href="ornata.vdom.core.tree.html" class="nav-link">ornata.vdom.core.tree</a><a href="ornata.vdom.diffing.html" class="nav-link">ornata.vdom.diffing</a><a href="ornata.vdom.diffing.algorithms.html" class="nav-link">ornata.vdom.diffing.algorithms</a><a href="ornata.vdom.diffing.cache.html" class="nav-link">ornata.vdom.diffing.cache</a><a href="ornata.vdom.diffing.engine.html" class="nav-link">ornata.vdom.diffing.engine</a><a href="ornata.vdom.diffing.incremental.html" class="nav-link">ornata.vdom.diffing.incremental</a><a href="ornata.vdom.diffing.interfaces.html" class="nav-link">ornata.vdom.diffing.interfaces</a><a href="ornata.vdom.diffing.lifecycle.html" class="nav-link">ornata.vdom.diffing.lifecycle</a><a href="ornata.vdom.diffing.object_pool.html" class="nav-link">ornata.vdom.diffing.object_pool</a><a href="ornata.vdom.diffing.optimization.html" class="nav-link">ornata.vdom.diffing.optimization</a><a href="ornata.vdom.diffing.patcher.html" class="nav-link">ornata.vdom.diffing.patcher</a><a href="ornata.vdom.diffing.reconciler.html" class="nav-link">ornata.vdom.diffing.reconciler</a><a href="ornata.vdom.diffing.scheduler.html" class="nav-link">ornata.vdom.diffing.scheduler</a><a href="ornata.vdom.memory.html" class="nav-link">ornata.vdom.memory</a><a href="ornata.vdom.memory.memory.html" class="nav-link">ornata.vdom.memory.memory</a>
+                </div>
+            </nav>
+        </aside>
+        
+        <main class="main">
+            <div class="topbar">
+                <div class="breadcrumbs">
+                    <a href="ornata.html" class="crumb-link" data-tooltip="ornata">ornata</a><span class="crumb-separator">/</span><a href="ornata.definitions.html" class="crumb-link" data-tooltip="ornata.definitions">definitions</a><span class="crumb-separator">/</span><a href="ornata.definitions.errors.html" class="crumb-link" data-tooltip="ornata.definitions.errors">errors</a>
+                </div>
+                <button onclick="history.back()" class="back-btn">
+                    <span>←</span> Back
+                </button>
+            </div>
+            <div class="content-scroll" id="content">
+                <div class="container">
+                    <h1>ornata.definitions.errors</h1>
+<p>All Error &amp; Exception definitions for Ornata.</p>
+<h2>Classes</h2>
+
+        <div class="api-card class-card" id="AnimationError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">AnimationError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="AnimationNotFoundError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">AnimationNotFoundError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="AnimationStateError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">AnimationStateError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="BackendSelectionError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">BackendSelectionError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="BaseError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">BaseError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            <div class="collapsible-toggle">
+                <strong>Methods (1)</strong>
+                <span class="toggle-icon">▶</span>
+            </div>
+            <div class="collapsible-content">
+                
+        <div class="api-card method-card" id="__init__">
+            <div class="api-header">
+                <span class="tag tag-method">method</span>
+                <span class="api-name">__init__</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Initialize self.  See help(type(self)) for accurate signature.</p>
+            </div>
+        </div>
+        
+            </div>
+            
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="ComponentError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">ComponentError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="ComponentLifecycleError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">ComponentLifecycleError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="ComponentMountError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">ComponentMountError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="ComponentNotFoundError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">ComponentNotFoundError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="ComponentUnmountError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">ComponentUnmountError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="ComponentUpdateError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">ComponentUpdateError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="CompositionError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">CompositionError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="ConfigurationError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">ConfigurationError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="ContextCreationError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">ContextCreationError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="CythonCompilationError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">CythonCompilationError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="DiffingError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">DiffingError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="EasingFunctionError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">EasingFunctionError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="EffectsError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">EffectsError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="EventError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">EventError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="EventHandlerError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">EventHandlerError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="EventPropagationError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">EventPropagationError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="EventQueueOverflowError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">EventQueueOverflowError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="EventReplayError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">EventReplayError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="EventSubscriptionError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">EventSubscriptionError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="EventSystemInitError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">EventSystemInitError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="FrameSubmissionError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">FrameSubmissionError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="GPUBackendNotAvailableError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">GPUBackendNotAvailableError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="GPUBufferAlignmentError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">GPUBufferAlignmentError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="GPUBufferBindingError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">GPUBufferBindingError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="GPUBufferCreationError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">GPUBufferCreationError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="GPUBufferError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">GPUBufferError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="GPUBufferUpdateError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">GPUBufferUpdateError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="GPUContextLostError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">GPUContextLostError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="GPUDeviceError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">GPUDeviceError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="GPUError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">GPUError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="GPUFeatureUnsupportedError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">GPUFeatureUnsupportedError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="GPUMemoryError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">GPUMemoryError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="GPUPipelineError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">GPUPipelineError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="GPUShaderCompilationError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">GPUShaderCompilationError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="GUIError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">GUIError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="GUIEventLoopError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">GUIEventLoopError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="InvalidComponentStateError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">InvalidComponentStateError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="InvalidEventTypeError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">InvalidEventTypeError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="InvalidKeyframeError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">InvalidKeyframeError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="InvalidLayoutConstraintsError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">InvalidLayoutConstraintsError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="InvalidParticleConfigError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">InvalidParticleConfigError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="InvalidPropError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">InvalidPropError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="InvalidStyleValueError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">InvalidStyleValueError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="InvalidTreeStructureError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">InvalidTreeStructureError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="InvalidVDOMOperationError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">InvalidVDOMOperationError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="KernelError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">KernelError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="KernelInitError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">KernelInitError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="KeyCollisionError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">KeyCollisionError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="LayoutCalculationError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">LayoutCalculationError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="LayoutError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">LayoutError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="LayoutOverflowError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">LayoutOverflowError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="LayoutUnderflowError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">LayoutUnderflowError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="MissingKeyError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">MissingKeyError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="ParticleError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">ParticleError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="ParticleSystemNotFoundError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">ParticleSystemNotFoundError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="PatchApplicationError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">PatchApplicationError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="PipelineError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">PipelineError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="PluginError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">PluginError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="PluginLoadError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">PluginLoadError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="RenderingError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">RenderingError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="StyleNotFoundError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">StyleNotFoundError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="StyleResolutionError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">StyleResolutionError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="StylingError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">StylingError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="SubsystemRegistrationError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">SubsystemRegistrationError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="SurfaceCreationError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">SurfaceCreationError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="ThemeLoadError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">ThemeLoadError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="ThemeOverrideError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">ThemeOverrideError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="ThemeTokenNotFoundError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">ThemeTokenNotFoundError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="UnsupportedRendererError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">UnsupportedRendererError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="VDOMError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">VDOMError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="VDOMReconciliationError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">VDOMReconciliationError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="ValidationError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">ValidationError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="VersionCompatibilityError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">VersionCompatibilityError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+
+        <div class="api-card class-card" id="WindowCreationError">
+            <div class="api-header">
+                <span class="tag tag-class">class</span>
+                <span class="api-name">WindowCreationError</span>
+                <span class="api-sig">(message: <span class="type-hint">str</span>) → <span class="type-hint">None</span></span>
+            </div>
+            <div class="api-body">
+                <p>Base <a href="ornata.styling.language.diag.html#error" title="Jump to error">error</a> for all Ornata-specific exceptions.</p>
+                
+            </div>
+        </div>
+        
+                </div>
+            </div>
+        </main>
+    </div>
+    
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('search-input');
+    const navLinks = document.querySelectorAll('.nav-link');
+    const copyButtons = document.querySelectorAll('.copy-btn');
+    
+    // SEARCH with fuzzy matching
+    searchInput?.addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase().trim();
+        navLinks.forEach(link => {
+            const text = link.textContent.toLowerCase();
+            // Simple fuzzy: check if all chars in term appear in order
+            let pos = 0;
+            for (let char of term) {
+                pos = text.indexOf(char, pos);
+                if (pos === -1) {
+                    link.classList.add('hidden');
+                    return;
+                }
+                pos++;
+            }
+            link.classList.remove('hidden');
+            
+            // Highlight matching text
+            if (term) {
+                const regex = new RegExp(`(${term})`, 'gi');
+                link.innerHTML = link.textContent.replace(regex, '<mark>$1</mark>');
+            }
+        });
+    });
+
+    // ACTIVE STATE & SCROLLSPY
+    const currentPath = window.location.pathname.split('/').pop();
+    navLinks.forEach(link => {
+        if (link.getAttribute('href') === currentPath) {
+            link.classList.add('active');
+            link.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+    });
+
+    // COPY BUTTONS
+    copyButtons.forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const pre = btn.parentElement;
+            const code = pre.querySelector('code');
+            try {
+                await navigator.clipboard.writeText(code.textContent);
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                    btn.classList.remove('copied');
+                }, 2000);
+            } catch (err) {
+                console.error('Copy failed:', err);
+            }
+        });
+    });
+
+    // COLLAPSIBLE SECTIONS
+    document.querySelectorAll('.collapsible-toggle').forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            const content = toggle.nextElementSibling;
+            content.classList.toggle('expanded');
+            const icon = toggle.querySelector('.toggle-icon');
+            if (icon) {
+                icon.textContent = content.classList.contains('expanded') ? '▼' : '▶';
+            }
+        });
+    });
+
+    // AUTO-LINK DETECTION
+    document.querySelectorAll('a').forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && href.startsWith('#') && href !== '#') {
+            // Check if target exists
+            const target = document.querySelector(href);
+            if (!target) {
+                link.classList.add('broken-link');
+                link.title = 'Target not found';
+            }
+        }
+    });
+});
+</script>
+
+</body>
+</html>

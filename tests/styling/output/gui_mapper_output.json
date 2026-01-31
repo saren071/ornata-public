@@ -1,0 +1,22 @@
+{
+  "fg": "#3ea6ff",
+  "bg": "#111318",
+  "border_px": 2,
+  "border_color": "#1f6bb5",
+  "padding_px": [
+    8,
+    16,
+    8,
+    16
+  ],
+  "font_profile": "base",
+  "font_size_px": 15,
+  "outline": "#ff6f91",
+  "text_decoration_color": "#f9d648",
+  "telemetry": [
+    "enabled"
+  ],
+  "debug": [
+    "verbose"
+  ]
+}

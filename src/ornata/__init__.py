@@ -1,9 +1,10 @@
-"""Ornata Package exports.
+"""
+Ornata Package exports.
 
-# Quick links (to sections in this file)
+# Quick links
 
 - [Overview](#overview)
-- [Licensing & Copyright](#licensing--copyright)
+- [Licensing & Copyright](#licensing-and-copyright)
 - [See Also](#see-also)
 
 ---
@@ -38,6 +39,7 @@ The `ornata` package provides a **high-performance UI framework** for building m
 # Licensing & Copyright
 **Copyright** © 2024 Ornata Contributors
 **License**: MIT
+
 """
 
 from __future__ import annotations

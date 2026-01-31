@@ -698,16 +698,19 @@ class EnhancedMarkdownParser:
         self.placeholders = {}
         self.footnotes = {}
         self.symbol_patterns = symbol_patterns or {}
+        self.slug_counts: dict[str, int] = {}
 
     def parse(self, text: str) -> str:
         if not text:
             return ""
 
+        self.slug_counts.clear()
         text = html.escape(text, quote=False)
         text = self._protect_code_blocks(text)
         text = self._process_footnotes(text)
         text = self._parse_headers(text)
         text = re.sub(r'^\s*[-*_]{3,}\s*$', '<hr>', text, flags=re.MULTILINE)
+
         text = self._parse_links(text)
         text = self._auto_link_urls(text)
         text = self._auto_link_symbols(text)
@@ -721,55 +724,100 @@ class EnhancedMarkdownParser:
         return text
 
     def _protect_code_blocks(self, text: str) -> str:
-        def preserve_code(match):
+        """Preserve fenced code blocks by replacing them with placeholders.
+
+        Args:
+            text: Markdown text that may contain code fences.
+
+        Returns:
+            str: Text with code blocks swapped for placeholders.
+        """
+
+        def preserve_code(match: re.Match[str]) -> str:
             uid = f"CTX-PROTECTED-{uuid.uuid4().hex}-CTX"
-            lang = match.group(1) or 'python'
+            lang = match.group(1) or "python"
             code_content = match.group(2)
             highlighted = self._syntax_highlight(code_content, lang)
-            self.placeholders[uid] = f'''<pre class="language-{lang}">
-<button class="copy-btn">Copy</button>
-<code>{highlighted}</code>
-</pre>'''
+            self.placeholders[uid] = (
+                f'<pre class="language-{lang}">\n'
+                "<button class=\"copy-btn\">Copy</button>\n"
+                f"<code>{highlighted}</code>\n"
+                "</pre>"
+            )
             return uid
-        text = re.sub(r'```(\w+)?\n(.*?)```', preserve_code, text, flags=re.DOTALL)
-        return text
+
+        return re.sub(r"```(\w+)?\n(.*?)```", preserve_code, text, flags=re.DOTALL)
 
     def _syntax_highlight(self, code: str, lang: str) -> str:
-        """Basic Python syntax highlighting"""
-        if lang != 'python':
+        """Apply lightweight syntax highlighting to fenced code blocks.
+
+        Args:
+            code: The raw code snippet.
+            lang: The language hint provided with the code fence.
+
+        Returns:
+            str: HTML highlighted code.
+        """
+
+        if lang != "python":
             return code
 
-        keywords = r'\b(def|class|if|elif|else|for|while|return|import|from|as|try|except|finally|with|lambda|yield|async|await|pass|break|continue|raise|assert|del|global|nonlocal|in|is|and|or|not)\b'
+        keywords = r"\b(def|class|if|elif|else|for|while|return|import|from|as|try|except|finally|with|lambda|yield|async|await|pass|break|continue|raise|assert|del|global|nonlocal|in|is|and|or|not)\b"
         code = re.sub(keywords, r'<span class="keyword">\1</span>', code)
         code = re.sub(r'(["\'])(?:(?=(\\?))\2.)*?\1', r'<span class="string">\g<0></span>', code)
         code = re.sub(r'\b(\d+\.?\d*)\b', r'<span class="number">\1</span>', code)
         code = re.sub(r'(#.*?)$', r'<span class="comment">\1</span>', code, flags=re.MULTILINE)
         code = re.sub(r'(@\w+)', r'<span class="decorator">\1</span>', code)
-        code = re.sub(r'(@\w+)', r'<span class="decorator">\1</span>', code)
-        builtins = r'\b(print|len|range|str|int|float|list|dict|set|tuple|bool|type|isinstance|enumerate|zip|map|filter|sum|min|max|abs|all|any|sorted|reversed)\b'
+        builtins = r"\b(print|len|range|str|int|float|list|dict|set|tuple|bool|type|isinstance|enumerate|zip|map|filter|sum|min|max|abs|all|any|sorted|reversed)\b"
         code = re.sub(builtins, r'<span class="builtin">\1</span>', code)
         return code
 
     def _process_footnotes(self, text: str) -> str:
-        """Extract footnote definitions"""
-        def extract_footnote(match):
+        """Extract footnote definitions and strip them from the body.
+
+        Args:
+            text: Markdown text containing inline footnotes.
+
+        Returns:
+            str: Text without the raw footnote definitions.
+        """
+
+        def extract_footnote(match: re.Match[str]) -> str:
             ref = match.group(1)
             content = match.group(2)
             self.footnotes[ref] = content
-            return ''
+            return ""
 
-        text = re.sub(r'^\[\^(\w+)\]:\s*(.+)$', extract_footnote, text, flags=re.MULTILINE)
-        return text
+        return re.sub(r'^\[\^(\w+)\]:\s*(.+)$', extract_footnote, text, flags=re.MULTILINE)
 
     def _parse_headers(self, text: str) -> str:
-        for i in range(6, 0, -1):
-            text = re.sub(
-                r'^{} (.+)$'.format('#' * i), 
-                r'<h{0} id="\1">\1</h{0}>'.format(i), 
-                text, 
-                flags=re.MULTILINE
-            )
+        for level in range(6, 0, -1):
+            pattern = re.compile(r'^{} (.+)$'.format('#' * level), flags=re.MULTILINE)
+
+            def replace(match: re.Match[str], heading_level: int = level) -> str:
+                heading_text = match.group(1).strip()
+                slug = self._slugify(heading_text)
+                return f'<h{heading_level} id="{slug}">{heading_text}</h{heading_level}>'
+
+            text = pattern.sub(replace, text)
         return text
+
+    def _slugify(self, heading_text: str) -> str:
+        """Generate a GitHub-like slug for a heading."""
+        raw_text = html.unescape(heading_text)
+        normalized = raw_text.replace('&', 'and')
+        slug = normalized.strip().lower()
+        slug = re.sub(r'[^\w\s-]', '', slug)
+        slug = re.sub(r'\s+', '-', slug)
+        slug = re.sub(r'-{2,}', '-', slug)
+        slug = slug.strip('-')
+        slug = slug or 'section'
+
+        count = self.slug_counts.get(slug, 0)
+        unique_slug = f"{slug}-{count}" if count else slug
+        self.slug_counts[slug] = count + 1
+
+        return unique_slug
 
     def _parse_links(self, text: str) -> str:
         def link_replacer(match):
@@ -798,6 +846,10 @@ class EnhancedMarkdownParser:
             matches = [m for m in self.known_modules if m.endswith(f".{target}")]
             if len(matches) == 1:
                 return f'<a href="{matches[0]}.html">{label}</a>'
+
+            # Handle internal anchor links
+            if target.startswith('#') and target != '#':
+                return f'<a href="{target}">{label}</a>'
 
             return f'<a href="#" class="broken-link" title="Link target not found: {target}">{label}</a>'
 
